@@ -51,3 +51,7 @@ select s.sid,
        'alter system kill session ''' || s.sid || ', ' || s.serial# || ''' immediate;' comando
   from v$session s
  --where s.username = 'DEBUG_PROC'
+
+
+alter system kill session '8381,37884,@1' immediate;
+server tb-dbmx8bdbadm01 - instance cdm1tb1
