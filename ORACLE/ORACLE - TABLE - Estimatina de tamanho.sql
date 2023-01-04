@@ -77,5 +77,4 @@ select table_name,
          where data.table_name = indx.table_name(+)  
            and data.table_name = lob.table_name(+)   
            and data.table_name = part.table_name(+)) 
- where table_name like '%OUTBOX%'
  order by table_name;

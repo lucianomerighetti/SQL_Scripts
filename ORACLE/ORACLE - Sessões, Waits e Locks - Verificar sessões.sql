@@ -8,11 +8,11 @@ select sid,
        to_char(logon_time, 'dd-mon-yyyy hh24:mi'),
        status
   from v$session
- where status = 'ACTIVE'
-   and username in ('FISC33', 'FISCAL33_02', 'OPS$SNCDEV', 'OPS$SNCPRD')
+ where username in ('RECEIVABLESUBR')
+   and status = 'INACTIVE'
 --   and nvl(osuser,'*') <> 'sncprd'
 --   and program  is null  -- 18 24 30
- order by to_char(logon_time, 'dd-mon-yyyy hh24:mi')
+ order by to_char(logon_time, 'dd-mon-yyyy hh24:mi');
 --------------------------------------------------------------------------------
 select sid,
        trunc((sofar / totalwork) * 100, 2) "%_complete",

@@ -43,6 +43,6 @@ select vs.sid,
 ---------------------------------------------------
 select vs.*
   from v$session vs
- where vs.username = 'SANFOM'
+ where vs.username = 'RECEIVABLESUBR'
    and vs.status = 'ACTIVE'
 ---------------------------------------------------

@@ -15,7 +15,7 @@ select p.spid,
   from v$session s, v$process p
  where p.addr = s.paddr
 --   and s.machine = 'CORP55'
-   and upper(s.osuser) = 'ANA.PAULA';
+   and upper(s.osuser) = 'RECEIVABLESUBR';
  order by s.username,
           s.machine,
           s.module,
@@ -34,7 +34,7 @@ select s.sid,
  where s.username is not null
 --   and upper(s.osuser) = 'ONF00'
 --   and upper(s.osuser) = 'ANA.PAULA'
-   and upper(s.osuser) = 'LMM00'
+   and upper(s.osuser) = 'RECEIVABLESUBR'
 --   and upper(s.action) like 'TEST%'
  order by s.logon_time,
           s.sid,
@@ -48,9 +48,12 @@ select s.sid,
        s.logon_time,
        s.seconds_in_wait,
        s.last_call_et,
-       'alter system kill session ''' || s.sid || ', ' || s.serial# || ''' immediate;' comando
+       'alter system kill session ''' || s.sid || ', ' || s.serial# || ''' immediate;' session_kill,
+       'alter system disconnect session ''' || s.sid || ', ' || s.serial# || ''' immediate;' session_disconnect
   from v$session s
- --where s.username = 'DEBUG_PROC'
+ where s.username = 'RECEIVABLESUBR'
+   and s.status = 'INACTIVE'
+ order by 1, 2;
 
 
 alter system kill session '8381,37884,@1' immediate;

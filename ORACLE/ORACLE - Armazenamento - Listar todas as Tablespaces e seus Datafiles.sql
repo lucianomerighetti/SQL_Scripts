@@ -53,18 +53,20 @@ compute sum of free on report
 compute sum of used on report
 compute sum of maxbytes on report
 
-  select a.tablespace_name as name,
-         b.tablespace_name as dummy,
-         sum(b.bytes)/count( distinct a.file_id||'.'||a.block_id )/1024/1024 as bytes,
-         sum(b.bytes)/count( distinct a.file_id||'.'||a.block_id )/1024/1024 -
-         sum(a.bytes)/count( distinct b.file_id )/1024/1024 as used,
-         sum(b.maxbytes)/count( distinct a.file_id||'.'||a.block_id )/1024/1024 as maxbytes,
-         sum(a.bytes)/count( distinct b.file_id )/1024/1024 as free,
-         (100 * ((sum(b.bytes)/count( distinct a.file_id||'.'||a.block_id )) - (sum(a.bytes)/count( distinct b.file_id ))) / (sum(b.bytes)/count( distinct a.file_id||'.'||a.block_id ))) as pct_used
-  from sys.dba_free_space a, sys.dba_data_files b
-  where a.tablespace_name = b.tablespace_name
-  group by a.tablespace_name, b.tablespace_name
-  order by pct_used, bytes
+select a.tablespace_name name,
+       b.tablespace_name dummy,
+       (sum(b.bytes) / count(distinct a.file_id || '.' || a.block_id) / 1024 / 1024) as bytes,
+       ((sum(b.bytes) / count(distinct a.file_id || '.' || a.block_id) / 1024 / 1024) - (sum(a.bytes) / count(distinct b.file_id) / 1024 / 1024)) used,
+       (sum(b.maxbytes) / count(distinct a.file_id || '.' || a.block_id) / 1024 / 1024) maxbytes,
+       (sum(a.bytes) / count(distinct b.file_id) / 1024 / 1024) free,
+       (100 * ((sum(b.bytes) / count(distinct a.file_id || '.' || a.block_id)) - 
+               (sum(a.bytes) / count(distinct b.file_id))) /
+               (sum(b.bytes) / count(distinct a.file_id || '.' || a.block_id))) pct_used
+  from sys.dba_free_space a
+       inner join sys.dba_data_files b on (a.tablespace_name = b.tablespace_name)
+ group by a.tablespace_name,
+          b.tablespace_name
+ order by 7 desc, 1, 2;
  /
 
 set lines 	500
@@ -97,12 +99,18 @@ prompt =========================================================================
 prompt
 accept tablespace prompt 'Qual Tablespace deseja verificar ? '
 
-select a.tablespace_name, a.file_name, a.maxbytes,
-       a.bytes, nvl(a.bytes-sum(b.bytes),a.bytes) as BYTES_USED,
-       nvl(sum(b.bytes),0) as BYTES_FREE
-from dba_data_files a, dba_free_space b
-where b.file_id(+)=a.file_id
-and a.tablespace_name like nvl(upper('&tablespace'),'%')
-group by a.tablespace_name, a.file_name, a.bytes, a.maxbytes
-order by a.file_name asc
+select a.tablespace_name,
+       a.file_name,
+       a.maxbytes,
+       a.bytes,
+       nvl(a.bytes - sum(b.bytes), a.bytes) as bytes_used,
+       nvl(sum(b.bytes), 0)                 as bytes_free
+  from dba_data_files           a
+       left join dba_free_space b on (a.file_id = b.file_id)
+ where a.tablespace_name like nvl(upper('&tablespace'), '%')
+ group by a.tablespace_name,
+          a.file_name,
+          a.bytes,
+          a.maxbytes
+ order by a.file_name asc;
 /

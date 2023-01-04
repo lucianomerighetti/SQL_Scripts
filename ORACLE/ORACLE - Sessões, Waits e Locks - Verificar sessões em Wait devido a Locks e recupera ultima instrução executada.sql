@@ -149,7 +149,7 @@ SELECT se.username,
  WHERE se.sid = lo.sid
    AND se.taddr = tr.addr(+)
    and tr.xidusn = ro.usn(+)
-   and se.username = 'SANFOM'
+   and se.username = 'RECEIVABLESUBR'
  order by  se.username,
            command,
            sid
