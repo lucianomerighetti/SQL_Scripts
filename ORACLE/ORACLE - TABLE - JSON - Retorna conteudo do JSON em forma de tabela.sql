@@ -4,7 +4,9 @@ connect by level <= (
 date '2022-02-28' - date  '2022-02-21' + 1);
 
 select re.idt_payment from receivables_adm.receivable_external re;
+
 select re.idt_payment from receivables_adm.receivable_internal ri;
+
 select re.idt_payment from receivables_adm.payment p;
 
 with
