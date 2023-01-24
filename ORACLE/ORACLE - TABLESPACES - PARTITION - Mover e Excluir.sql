@@ -1,4 +1,4 @@
--- TABLE DROP PARTITION
+-- TABLE DROP/TRUNCATE PARTITION
 select tp.table_owner,
        tp.table_name,
        tp.partition_position,
@@ -10,7 +10,8 @@ select tp.table_owner,
                                                           'where partition_name = '''    || tp.partition_name || '''' ||
                                                           ' and table_name = '''         || tp.table_name     || '''' ||
                                                           ' and table_owner = '''        || tp.table_owner    || ''''), '//text()'), 12, 10), 'yyyy-mm-dd') high_value_date,
-       'ALTER TABLE ' || tp.table_owner || '.' || tp.table_name || ' DROP PARTITION ' || tp.partition_name || ' UPDATE INDEXES PARALLEL 48;' script
+       'ALTER TABLE ' || tp.table_owner || '.' || tp.table_name || ' DROP PARTITION ' || tp.partition_name || ' UPDATE INDEXES PARALLEL 48;' script_drop;
+       'ALTER TABLE ' || tp.table_owner || '.' || tp.table_name || ' TRUNCATE PARTITION ' || tp.partition_name || ' UPDATE INDEXES PARALLEL 48;' script_truncate
   from sys.dba_tab_partitions tp
  where 1 = 1
    and tp.tablespace_name = 'TSDRECEIVABLES06'
@@ -31,7 +32,8 @@ select tp.table_owner,
                                                           'where partition_name = '''    || tp.partition_name || '''' ||
                                                           ' and table_name = '''         || tp.table_name     || '''' ||
                                                           ' and table_owner = '''        || tp.table_owner    || ''''), '//text()'), 12, 10), 'yyyy-mm-dd') high_value_date,
-       'ALTER TABLE ' || tp.table_owner || '.' || tp.table_name || ' MOVE PARTITION '    || tp.partition_name || ' TABLESPACE TSDRECEIVABLES20 PARALLEL 48 ONLINE;'  script
+       'ALTER TABLE ' || tp.table_owner || '.' || tp.table_name || ' MOVE PARTITION '    || tp.partition_name || ' TABLESPACE TSDRECEIVABLES20 PARALLEL 48 ONLINE;'  script_move_tablespace,
+       'ALTER TABLE ' || tp.table_owner || '.' || tp.table_name || ' MOVE PARTITION '    || tp.partition_name || ' PARALLEL 48 ONLINE;'  script
   from sys.dba_tab_partitions tp
  where 1 = 1
    and tp.tablespace_name = 'TSDRECEIVABLES06'
@@ -52,7 +54,8 @@ select ip.index_owner,
                                                           'where partition_name = '''    || ip.partition_name || '''' ||
                                                           ' and index_owner = '''        || ip.index_owner    || '''' ||
                                                           ' and index_name = '''         || ip.index_name     || ''''), '//text()'), 12, 10), 'yyyy-mm-dd') high_value_date,
-       'ALTER INDEX ' || ip.index_owner || '.' || ip.index_name || ' REBUILD PARTITION ' || ip.partition_name || ' TABLESPACE TSIRECEIVABLES20 PARALLEL 48 ONLINE;'  script
+       'ALTER INDEX ' || ip.index_owner || '.' || ip.index_name || ' REBUILD PARTITION ' || ip.partition_name || ' TABLESPACE TSIRECEIVABLES20 PARALLEL 48 ONLINE;'  script_move_tablespace,
+       'ALTER INDEX ' || ip.index_owner || '.' || ip.index_name || ' REBUILD PARTITION ' || ip.partition_name || ' PARALLEL 48 ONLINE;'  script
   from sys.dba_ind_partitions ip
  where 1 = 1
    and ip.tablespace_name = 'TSIRECEIVABLES06'
@@ -66,7 +69,8 @@ select i.owner,
        i.table_name,
        i.index_name,
        i.tablespace_name,
-       'ALTER INDEX ' || i.owner || '.' || i.index_name || ' REBUILD TABLESPACE TSIRECEIVABLES20 PARALLEL 48 ONLINE;'  script
+       'ALTER INDEX ' || i.owner || '.' || i.index_name || ' REBUILD TABLESPACE TSIRECEIVABLES20 PARALLEL 48 ONLINE;'  script_move_tablespace,
+       'ALTER INDEX ' || i.owner || '.' || i.index_name || ' REBUILD PARALLEL 48 ONLINE;'  script
   from sys.dba_indexes i
  where i.partitioned     = 'NO'
    and i.tablespace_name = 'TSIRECEIVABLES06'
