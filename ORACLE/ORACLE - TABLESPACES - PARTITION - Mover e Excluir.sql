@@ -73,9 +73,9 @@ select i.owner,
        i.table_name,
        i.index_name,
        i.tablespace_name,
-       'ALTER INDEX ' || i.owner || '.' || i.index_name || ' COALESCE CLEANUP PARALLEL 48;'
-       'ALTER INDEX ' || i.owner || '.' || i.index_name || ' REBUILD TABLESPACE TSIRECEIVABLES20 PARALLEL 48 ONLINE;'  script_move_tablespace,
-       'ALTER INDEX ' || i.owner || '.' || i.index_name || ' REBUILD PARALLEL 48 ONLINE;'  script
+       'ALTER INDEX ' || i.owner || '.' || i.index_name || ' COALESCE CLEANUP PARALLEL 48;' script_coalesce_cleanup,
+       'ALTER INDEX ' || i.owner || '.' || i.index_name || ' REBUILD TABLESPACE TSIRECEIVABLES20 PARALLEL 48 ONLINE;' script_move_tablespace,
+       'ALTER INDEX ' || i.owner || '.' || i.index_name || ' REBUILD PARALLEL 48 ONLINE;'  script_rebuild
   from sys.dba_indexes i
  where 1 = 1
    and i.partitioned     = 'NO'
