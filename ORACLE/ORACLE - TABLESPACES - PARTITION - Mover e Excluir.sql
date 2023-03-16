@@ -15,8 +15,8 @@ select tp.table_owner,
   from sys.dba_tab_partitions tp
  where 1 = 1
 --   and tp.tablespace_name = 'TSDRECEIVABLES06'
-   and tp.table_owner     = 'DEBITSCHEDULE_ADM'
-   and tp.table_name      = 'NONEXIST_RECOVERY_IDEMPOTENCY'
+   and tp.table_owner     = 'AD'
+   and tp.table_name      = 'CCE_REASSOCIATE_CONTROL'
  order by 1, 2, 3, 4 ,5;
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -32,13 +32,13 @@ select tp.table_owner,
                                                           'where partition_name = '''    || tp.partition_name || '''' ||
                                                           ' and table_name = '''         || tp.table_name     || '''' ||
                                                           ' and table_owner = '''        || tp.table_owner    || ''''), '//text()'), 12, 10), 'yyyy-mm-dd') high_value_date,
-       'ALTER TABLE ' || tp.table_owner || '.' || tp.table_name || ' MOVE PARTITION '    || tp.partition_name || ' TABLESPACE TSDRECEIVABLES20 PARALLEL 48 ONLINE;'  script_move_tablespace,
+       'ALTER TABLE ' || tp.table_owner || '.' || tp.table_name || ' MOVE PARTITION '    || tp.partition_name || ' TABLESPACE TSDRECEIVABLES04 PARALLEL 48 ONLINE;'  script_move_tablespace,
        'ALTER TABLE ' || tp.table_owner || '.' || tp.table_name || ' MOVE PARTITION '    || tp.partition_name || ' PARALLEL 48 ONLINE;'  script
   from sys.dba_tab_partitions tp
  where 1 = 1
 --   and tp.tablespace_name = 'TSDRECEIVABLES06'
-   and tp.table_owner     = 'DEBITSCHEDULE_ADM'
-   and tp.table_name      = 'NONEXIST_RECOVERY_IDEMPOTENCY'
+   and tp.table_owner     = 'AD'
+   and tp.table_name      = 'CCE_REASSOCIATE_CONTROL'
  order by 1, 2, 3, 4 ,5;
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -54,17 +54,17 @@ select ip.index_owner,
                                                           'where partition_name = '''    || ip.partition_name || '''' ||
                                                           ' and index_owner = '''        || ip.index_owner    || '''' ||
                                                           ' and index_name = '''         || ip.index_name     || ''''), '//text()'), 12, 10), 'yyyy-mm-dd') high_value_date,
-       'ALTER INDEX ' || ip.index_owner || '.' || ip.index_name || ' REBUILD PARTITION ' || ip.partition_name || ' TABLESPACE TSIRECEIVABLES20 PARALLEL 48 ONLINE;'  script_move_tablespace,
+       'ALTER INDEX ' || ip.index_owner || '.' || ip.index_name || ' REBUILD PARTITION ' || ip.partition_name || ' TABLESPACE TSIRECEIVABLES04 PARALLEL 48 ONLINE;'  script_move_tablespace,
        'ALTER INDEX ' || ip.index_owner || '.' || ip.index_name || ' REBUILD PARTITION ' || ip.partition_name || ' PARALLEL 48 ONLINE;'  script
   from sys.dba_ind_partitions ip
  where 1 = 1
 --   and ip.tablespace_name = 'TSIRECEIVABLES06'
-   and ip.index_owner     = 'DEBITSCHEDULE_ADM'
+   and ip.index_owner     = 'AD'
    and ip.index_name in (select i.index_name
                             from sys.dba_indexes i
                            where i.partitioned = 'YES'
-                             and i.owner       = 'DEBITSCHEDULE_ADM'
-                             and i.table_name  = 'NONEXIST_RECOVERY_IDEMPOTENCY')
+                             and i.owner       = 'AD'
+                             and i.table_name  = 'CCE_REASSOCIATE_CONTROL')
  order by 1, 2, 3, 4 ,5;
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -80,8 +80,8 @@ select i.owner,
  where 1 = 1
    and i.partitioned     = 'NO'
 --   and i.tablespace_name = 'TSIRECEIVABLES06'
-   and i.owner       = 'DEBITSCHEDULE_ADM'
-   and i.table_name  = 'NONEXIST_RECOVERY_IDEMPOTENCY'
+   and i.owner       = 'AD'
+   and i.table_name  = 'CCE_REASSOCIATE_CONTROL'
  order by i.owner,
           i.table_name,
           i.index_name;
@@ -108,8 +108,8 @@ select lp.table_owner,
 									  lp.lob_name    = l.segment_name)
  where 1 = 1
    and lp.tablespace_name = 'TSLRECEIVABLES06'
-   and lp.table_owner     = 'DEBITSCHEDULE_ADM'
-   and lp.table_name      = 'NONEXIST_RECOVERY_IDEMPOTENCY'
+   and lp.table_owner     = 'AD'
+   and lp.table_name      = 'CCE_REASSOCIATE_CONTROL'
  order by 1, 2, 3, 4 ,5;
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------

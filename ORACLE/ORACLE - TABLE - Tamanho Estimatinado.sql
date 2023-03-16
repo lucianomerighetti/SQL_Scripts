@@ -1,13 +1,9 @@
 select b.segment_name,
        a.last_analyzed,
        b.segment_type,
-       user,
        sum(b.bytes) size_bytes,
-       a.initial_extent,
-       a.next_extent,
        sum (a.initial_extent) initial_extent,
-       sum (a.next_extent) next_extent,
-       a.last_analyzed
+       sum (a.next_extent) next_extent
   from sys.dba_tables              a
        inner join sys.dba_segments b on (a.table_name = b.segment_name)
  where a.owner = 'RECEIVABLES_ADM'--upper(user)
@@ -31,9 +27,5 @@ select b.segment_name,
 */
  group by b.segment_name,
           a.last_analyzed,
-          b.segment_type,
-          user,
-          a.initial_extent,
-          a.next_extent,
-          a.last_analyzed
+          b.segment_type
  order by 1, 5 desc;
