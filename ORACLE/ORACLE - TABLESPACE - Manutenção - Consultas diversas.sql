@@ -18,8 +18,11 @@ select f.tablespace_name,
  order by f.tablespace_name;
 
 select * from SYS.dba_tab_partitions;
-select distinct table_owner, table_name, tablespace_name from SYS.dba_tab_partitions where table_owner = 'AD' and table_name like'%OUTBOX%';
-select distinct table_owner, table_name, tablespace_name from SYS.dba_tab_partitions where table_owner = 'RECEIVABLES_ADM' and table_name like'%OUTBOX%';
+select distinct table_owner, table_name, tablespace_name from SYS.dba_tab_partitions where table_owner = 'AD' and table_name like'%CCE_REASSOCIATE_CONTROL%';
+
+select distinct table_owner, table_name, tablespace_name from SYS.dba_tab_partitions where table_owner = 'RECEIVABLES_ADM' and table_name like'%CCE_REASSOCIATE_CONTROL%';
+select distinct index_owner, index_name, tablespace_name from SYS.dba_ind_partitions where table_owner = 'RECEIVABLES_ADM' and index_name like'%CCE_REASSOCIATE_CONTROL%';
+select distinct table_owner, table_name, tablespace_name from SYS.dba_lob_partitions where table_owner = 'RECEIVABLES_ADM' and table_name like'%CCE_REASSOCIATE_CONTROL%';
 
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------

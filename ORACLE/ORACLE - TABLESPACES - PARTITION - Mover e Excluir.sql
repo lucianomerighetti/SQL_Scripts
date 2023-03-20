@@ -15,7 +15,7 @@ select tp.table_owner,
   from sys.dba_tab_partitions tp
  where 1 = 1
 --   and tp.tablespace_name = 'TSDRECEIVABLES06'
-   and tp.table_owner     = 'AD'
+   and tp.table_owner     = 'RECEIVABLES_ADM' --'AD'
    and tp.table_name      = 'CCE_REASSOCIATE_CONTROL'
  order by 1, 2, 3, 4 ,5;
 --------------------------------------------------------------------------------
@@ -37,7 +37,7 @@ select tp.table_owner,
   from sys.dba_tab_partitions tp
  where 1 = 1
 --   and tp.tablespace_name = 'TSDRECEIVABLES06'
-   and tp.table_owner     = 'AD'
+   and tp.table_owner     = 'RECEIVABLES_ADM' --'AD'
    and tp.table_name      = 'CCE_REASSOCIATE_CONTROL'
  order by 1, 2, 3, 4 ,5;
 --------------------------------------------------------------------------------
@@ -59,11 +59,11 @@ select ip.index_owner,
   from sys.dba_ind_partitions ip
  where 1 = 1
 --   and ip.tablespace_name = 'TSIRECEIVABLES06'
-   and ip.index_owner     = 'AD'
+   and ip.index_owner     = 'RECEIVABLES_ADM' --'AD'
    and ip.index_name in (select i.index_name
                             from sys.dba_indexes i
                            where i.partitioned = 'YES'
-                             and i.owner       = 'AD'
+                             and i.owner       = 'RECEIVABLES_ADM' --'AD'
                              and i.table_name  = 'CCE_REASSOCIATE_CONTROL')
  order by 1, 2, 3, 4 ,5;
 --------------------------------------------------------------------------------
@@ -74,13 +74,13 @@ select i.owner,
        i.index_name,
        i.tablespace_name,
        'ALTER INDEX ' || i.owner || '.' || i.index_name || ' COALESCE CLEANUP PARALLEL 48;' script_coalesce_cleanup,
-       'ALTER INDEX ' || i.owner || '.' || i.index_name || ' REBUILD TABLESPACE TSIRECEIVABLES20 PARALLEL 48 ONLINE;' script_move_tablespace,
+       'ALTER INDEX ' || i.owner || '.' || i.index_name || ' REBUILD TABLESPACE TSIRECEIVABLES04 PARALLEL 48 ONLINE;' script_move_tablespace,
        'ALTER INDEX ' || i.owner || '.' || i.index_name || ' REBUILD PARALLEL 48 ONLINE;'  script_rebuild
   from sys.dba_indexes i
  where 1 = 1
    and i.partitioned     = 'NO'
 --   and i.tablespace_name = 'TSIRECEIVABLES06'
-   and i.owner       = 'AD'
+   and i.owner       = 'RECEIVABLES_ADM' --'AD'
    and i.table_name  = 'CCE_REASSOCIATE_CONTROL'
  order by i.owner,
           i.table_name,
@@ -101,14 +101,14 @@ select lp.table_owner,
                                                           'where partition_name = '''    || lp.partition_name || '''' ||
                                                           ' and table_owner = '''        || lp.table_owner    || '''' ||
                                                           ' and table_name = '''         || lp.table_name     || ''''), '//text()'), 12, 10), 'yyyy-mm-dd') high_value_date,
-	   'ALTER TABLE ' || lp.table_owner || '.' || lp.table_name || ' MOVE PARTITION '    || lp.partition_name || ' LOB(' || l.column_name || ') STORE AS (TABLESPACE TSLRECEIVABLES20) PARALLEL 48 ONLINE;' script
+	   'ALTER TABLE ' || lp.table_owner || '.' || lp.table_name || ' MOVE PARTITION '    || lp.partition_name || ' LOB(' || l.column_name || ') STORE AS (TABLESPACE TSLRECEIVABLES04) PARALLEL 48 ONLINE;' script
   from sys.dba_lob_partitions  lp
        inner join sys.dba_lobs l  on (lp.table_owner = l.owner      and 
                                       lp.table_name  = l.table_name and
 									  lp.lob_name    = l.segment_name)
  where 1 = 1
-   and lp.tablespace_name = 'TSLRECEIVABLES06'
-   and lp.table_owner     = 'AD'
+--   and lp.tablespace_name = 'TSLRECEIVABLES06'
+   and lp.table_owner     = 'RECEIVABLES_ADM' --'AD'
    and lp.table_name      = 'CCE_REASSOCIATE_CONTROL'
  order by 1, 2, 3, 4 ,5;
 --------------------------------------------------------------------------------
