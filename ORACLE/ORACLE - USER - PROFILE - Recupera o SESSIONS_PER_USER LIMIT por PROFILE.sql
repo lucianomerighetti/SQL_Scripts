@@ -5,8 +5,11 @@ select
 from
     dba_profiles
 where
-    profile like 'PR%'
+    profile = 'PR_RECEIVABLES_ADM'
     and resource_name = 'SESSIONS_PER_USER';
+--    profile like 'PR%'
+--    profile in ('PR_AD', 'PR_BI', 'PR_BIGDATA', 'PR_DBA', 'PR_DEV', 'PR_DS', 'PR_GOV', 'PR_MANUT_RECEIVABLES', 'PR_REDASH', 'PR_SEC')
+--    and resource_name = 'IDLE_TIME';
     
 --Reduzir o numero de sessões 
 -- De 10 para 5

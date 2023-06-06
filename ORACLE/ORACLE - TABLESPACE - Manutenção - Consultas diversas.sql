@@ -184,6 +184,7 @@ select i.owner,
 --------------------------------------------------------------------------------
 -- LOB PARTITION
 select lp.table_owner,
+       lp.tablespace_name,
        lp.table_name,
 	   lp.lob_name,
 	   lp.partition_position,
@@ -202,9 +203,9 @@ select lp.table_owner,
                                       lp.table_name  = l.table_name and
 									  lp.lob_name    = l.segment_name)
  where 1 = 1
-   and lp.tablespace_name = 'TSLRECEIVABLES06'
+   and lp.tablespace_name like 'TSLRECEIVABLES17'
    and lp.table_owner     = 'RECEIVABLES_ADM'
-   and lp.table_name      = 'PAYMENT_INTENT'
+   and lp.table_name      like 'RECEIVABLE_UNIT%OUTBOX'
  order by 1, 2, 3, 4 ,5;
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------

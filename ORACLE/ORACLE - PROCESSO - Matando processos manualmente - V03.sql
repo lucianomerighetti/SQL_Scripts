@@ -14,8 +14,7 @@ select p.spid,
        'alter system kill session ''' || s.sid || ', ' || s.serial# || ''' immediate;' comando
   from v$session s, v$process p
  where p.addr = s.paddr
---   and s.machine = 'CORP55'
-   and upper(s.osuser) = 'RECEIVABLESUBR';
+   and upper(s.osuser) = 'MANUT_RECEIVABLES'
  order by s.username,
           s.machine,
           s.module,
@@ -32,10 +31,7 @@ select s.sid,
        'alter system kill session ''' || s.sid || ', ' || s.serial# || ''' immediate;' comando
   from v$session s
  where s.username is not null
---   and upper(s.osuser) = 'ONF00'
---   and upper(s.osuser) = 'ANA.PAULA'
-   and upper(s.osuser) = 'RECEIVABLESUBR'
---   and upper(s.action) like 'TEST%'
+   and upper(s.osuser) = 'MANUT_RECEIVABLES'
  order by s.logon_time,
           s.sid,
           s.serial#;
@@ -51,8 +47,8 @@ select s.sid,
        'alter system kill session ''' || s.sid || ', ' || s.serial# || ''' immediate;' session_kill,
        'alter system disconnect session ''' || s.sid || ', ' || s.serial# || ''' immediate;' session_disconnect
   from v$session s
- where s.username = 'RECEIVABLESUBR'
-   and s.status = 'INACTIVE'
+ where s.username = 'MANUT_RECEIVABLES'
+--   and s.status = 'INACTIVE'
  order by 1, 2;
 
 
