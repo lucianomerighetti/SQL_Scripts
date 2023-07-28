@@ -1,3 +1,26 @@
+select pi.cod_payment,
+       pi.dat_creation,
+       p.ind_escrow_type,
+       p.num_escrow_value,
+       jsn.payment_method,
+       jsn.escrow_delay_days
+  from receivables_adm.payment_intent pi
+       join receivables_adm.payment   p on (pi.cod_payment = p.cod_payment),
+       json_table(pi.jsn_payload,
+                  '$[*]'
+                  columns(payment_method    varchar2(36) path '$.paymentInfo.payment_processor',
+                          escrow_delay_days number(4)    path '$.escrow.delay_days')
+                 ) jsn
+ where pi.num_payload_version = 2
+   and trunc(pi.dat_creation) = trunc(sysdate - 1)
+   and jsn.payment_method    <> 'PIX'
+   and jsn.escrow_delay_days is not null;
+
+
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+
 select date '2022-02-21' + level - 1 date_purge
 from   dual
 connect by level <= (
