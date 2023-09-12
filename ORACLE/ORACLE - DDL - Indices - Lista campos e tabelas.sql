@@ -22,11 +22,10 @@ select i.index_name, c.*
        sys.all_ind_columns c
  where c.index_owner = i.owner
    and c.index_name = i.index_name
---   and c.column_name like 'NU_TELEFONE%'
---   and i.index_name like '%TEL%'
    and i.owner = t.owner
    and i.table_name = t.table_name
-   and t.table_name = 'PROJECT'
+   and t.table_name = 'RECEIVABLE_EXTERNAL'
+   and t.owner = 'RECEIVABLES_ADM'
  order by i.index_name;
 --------------------------------------------------------------------------
 select owner,

@@ -28,7 +28,6 @@ select vw.tablespace_name,
                   round((nvl(c.free_bytes,0)/nvl(b.bytes,1)*100),2) pct_free,
                 b.maxsize_gb,
                 round((nvl(e.block_id,0)*a.block_size)/1073741824) hwm_gb
-         select *
            from (
                  select tablespace_name,
                         bigfile,
@@ -36,7 +35,7 @@ select vw.tablespace_name,
                         block_size
                    from dba_tablespaces
                   where contents <> 'UNDO'
-               ) a,
+               ) a
                inner join (
                             select tablespace_name,
                                    sum(bytes) bytes,
