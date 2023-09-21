@@ -26,8 +26,8 @@ select distinct
    and cfk.constraint_type   = 'R'
    and cfk.owner             = cpk.owner
    and cpk.owner             = upper('RECEIVABLES_ADM')
-   and (cfk.table_name       = upper('LEGACY') or
-        cpk.table_name       = upper('LEGACY'))
+   and (cfk.table_name       = upper('CCE_CHANGE_EVENT_SCHEDULE') or
+        cpk.table_name       = upper('CCE_CHANGE_EVENT_SCHEDULE'))
    --and cpk.owner             = upper('&Owner')
    --and (cfk.table_name       = upper('&Tabela') or
    --     cpk.table_name       = upper('&Tabela'))

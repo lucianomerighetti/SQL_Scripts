@@ -14,7 +14,7 @@ select tp.table_owner,
        'ALTER TABLE ' || tp.table_owner || '.' || tp.table_name || ' TRUNCATE PARTITION ' || tp.partition_name || ' UPDATE INDEXES PARALLEL 48;' script_truncate
   from sys.dba_tab_partitions tp
  where 1 = 1
---   and tp.tablespace_name = 'TSDRECEIVABLES06'
+   and tp.tablespace_name = 'TSDRECEIVABLES01'
    and tp.table_owner     = 'RECEIVABLES_ADM' --'AD'
    and tp.table_name      = 'CCE_REASSOCIATE_CONTROL'
  order by 1, 2, 3, 4 ,5;
