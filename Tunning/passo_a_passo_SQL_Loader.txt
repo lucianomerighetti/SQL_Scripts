@@ -1,0 +1,74 @@
+Passo 1 - valide se o SQL Loader está funcionando na sua workspace
+		a. abra o prompt de comando e digite 'sqlldr', se aparecer os parâmetros do SQL Loader, está funcionando, se aparecer uma mensagem de erro, entre em contato com o SRE para ele avaliar a instalação do SQL Loader na sua workspace
+
+Passo 2 - Ter um usuário nominal do banco que você quer efetuar a carga
+		a. se não tiver, pode abrir o chamado no JIRA https://jiraps.atlassian.net/servicedesk/customer/portal/146/group/677/create/3229
+
+Passo 3 - o arquivo a ser carregado deve ser da extensão csv. Sem formatações, caracteres especiais e os valores numéricos não devem ter identificador monetário, separador de milhar e casas decimais devem estar separadas por ponto;
+
+Passo 4 - é necessário enviar o arquivo para a workspace, para isso, vc envia o arquivo em anexo para o e-mail enviojumpbox@sharepoint.uolinc.com. O arquivo não pode passar de 20 MB e pode ser compactado.
+
+Passo 5 - dentro da workspace, entre no link https://pagseguro.sharepoint.intranet/sites/RelatoriosJumpBox, no Menu 'Página Inicial'\'Meus Envios', e baixe o arquivo
+
+Passo 6 - logue no banco de dados e crie a tabela que receberá as informações dentro do seu owner;
+
+Passo 7 - crie o arquivo de configuração do SQL Loader, como esse exemplo:
+
+OPTIONS (SILENT=ALL, DIRECT=TRUE, ERRORS=999999999,PARALLEL=TRUE)
+UNRECOVERABLE LOAD DATA 
+INFILE 'D:\Users\smoreira\MOVS_FEITAS_ERRADO.CSV'
+APPEND
+INTO table SMOREIRA.TMP_MOVS_FEITAS_ERRADO_REC_8688
+FIELDS TERMINATED BY ';'
+OPTIONALLY ENCLOSED BY '"'
+TRAILING NULLCOLS
+(
+IDT_TRANSACTION,
+FAD,
+FAC,
+FAD_USER,
+FAC_USER,
+IDT_TURNOVER_CERTA,
+SUM_AMOUNT,
+QTD_TURNOVERS, 
+VALOR_ERRADO,
+FT_DAT_MIN DATE 'YYYY-MM-DD HH24:MI:SS',
+FT_DAT_MAX DATE 'YYYY-MM-DD HH24:MI:SS'
+) 
+
+Onde:
+
+OPTIONS (SILENT=ALL, DIRECT=TRUE, ERRORS=999999999,PARALLEL=TRUE) = são opções de carga. Nesse caso, o SILENT=ALL suprime todas as informações de erro, o DIRECT=TRUE indica que é pra colocar o caminho inteiro do arquivo que vai ser lido, ERRORS=999999999 é a quantidade de erros permitidos no carregamento e o PARALLEL=TRUE indica que ele fará a carga usando paralelismo (nesse caso, a tabela não pode ter PK)
+Mais opções, vejam esse link http://www.remote-dba.net/teas_rem_util17.htm
+
+UNRECOVERABLE LOAD DATA = não grava dados na área de redo
+
+INFILE 'D:\Users\smoreira\MOVS_FEITAS_ERRADO.CSV' = caminho completo e nome do arquivo
+
+INTO table SMOREIRA.TMP_MOVS_FEITAS_ERRADO_REC_8688 = nome da tabela que receberá os dados
+
+FIELDS TERMINATED BY ';' = caracter usado como separador das colunas
+
+OPTIONALLY ENCLOSED BY '"' = caracter opcional que termina a linha
+
+TRAILING NULLCOLS = colunas que receberão os dados. Devem estar na ordem q estão no arquivo e se tiver campo de data, tem que colocar a formatação
+
+
+Passo 8 - salve o arquivo com a extensão .ctl
+
+Passo 9 - crie a string de chamada do SQL Loader, como no exemplo abaixo:
+
+sqlldr smoreira/\"senha\"@PDBRECEIVABLES.BD.INTRANET.PAGS:1521/PDBRECEIVABLES control=D:\Users\smoreira\0_scripts\carga_sqlloader.ctl
+
+
+Onde:
+
+smoreira = usuário que logará no banco
+senha = senha que logará no banco. Mantenha as barras e as aspas duplas
+@PDBRECEIVABLES.BD.INTRANET.PAGS:1521/PDBRECEIVABLES = banco que terá a carga
+control=D:\Users\smoreira\0_scripts\carga_sqlloader.ctl = o caminho completo do arquivo que você salvou no passo 8
+
+Execute!
+
+Na pasta que o arquivo origem está, será gerado um arquivo com o mesmo nome dele, mas com a extensão .log, onde mostrará os detalhes da carga
+Na pasta que está o arquivo de carga, será gerado um arquivo com o mesmo nome do arquivo de carga, com a extensão .bad, com o conteúdo das linhas que não foram carregadas.

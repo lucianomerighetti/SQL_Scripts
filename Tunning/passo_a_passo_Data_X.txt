@@ -1,0 +1,61 @@
+Passo 1: ter um usuário de aplicação da AWS (pergunte ao time e/ou SRE do seu time se já existe, se não existir, peça ao SRE para criar)
+
+Passo 2: configurar o AWS Cli (para baixar, segue o link https://docs.aws.amazon.com/cli/v1/userguide/install-windows.html)
+		a. Na sua estação de trabalho, dentro da pasta com o seu login, no caminho C:\Users, crie uma pasta '.aws', 
+		b. Dentro dessa nova pasta crie o arquivo 'credentials'. Dentro desse arquivo você colocará as credenciais do(s) usuário(s) da AWS, seguindo esse exemplo:
+				[recebiveis-prod] = 'apelido' da conexão, geralmente eu coloco o usuário e o ambiente
+				aws_access_key_id = id do usuário
+				aws_secret_access_key = senha
+				region=us-east-1
+				
+Passo 3: verificar se você tem acesso ao AWS Air Flow (https://airflow.data.platform.aws.intranet.pagseguro.uol/home). Se não tiver, terá que pedir acesso conforme essa documentação https://confluence.intranet.uol.com.br/confluence/pages/viewpage.action?spaceKey=PagSeguro&title=Itaipu+FAQ#ItaipuFAQ-Meutimej%C3%A1%C3%A9clientedoDataXpress.Comopossopediracessoaomeuusu%C3%A1rioparaoAirflow?
+
+Passo 4: verificar se os dados que você precisa estão no Data-X
+		a. o catálogo de tabelas do Data-X (https://confluence.intranet.uol.com.br/confluence/pages/viewpage.action?pageId=285841733) tem todas as tabelas disponíveis no ambiente. Os nomes não estão padronizados, mas varia entre o nome do banco/owner/dominio e sub dominio no schema, e o nome da tabela original no banco transacional ou nome da informação gravada na tabela.
+
+Passo 5: configurar o ambiente de QA do RedShift, para testar a busca que você irá fazer em produção
+		a. pela sua estação de trabalho, no DBeaver, você configure com as informações descritas na documentação https://confluence.intranet.uol.com.br/confluence/pages/viewpage.action?spaceKey=PagSeguro&title=Itaipu+FAQ#ItaipuFAQ-ConsigoacessaroDataXdiretopeloRedshift?
+		b. edite a conexão criada no DBeaver, vá na aba 'SSL' e selecione o item 'Use SSL'
+		
+		
+Após todos os passos feitos, você já pode executar a extração de dados! Siga esses pontos:
+
+
+1 - entre no AWS Air Flow (https://airflow.data.platform.aws.intranet.pagseguro.uol/home) e no campo 'Search', pesquise pela DAG 'jb_dwa_common_unload';
+2 - Entre na DAG e no cabeçalho procure o item 'Trigger DAG';
+3 - no campo vazio, vc vai colocar as instruções da extração em um formato JSON, exemplo:
+'{
+    "application_username": "tombamento-miami", 
+    "s3_path": "extracao_transaction",
+    "query_command": "select ft.idt_transaction, count(ft.idt_transaction) as total_movimentacoes from otis.safepay_adm_financial_turnover ft inner join otis.safepay_adm_financial_account fcd on ft.idt_financial_account_debt = fcd.idt_financial_account inner join otis.safepay_adm_financial_account_type fatd on fcd.idt_financial_account_type = fatd.idt_financial_account_type inner join otis.safepay_adm_financial_account fcc on ft.idt_financial_account_credit = fcc.idt_financial_account inner join otis.safepay_adm_financial_account_type fatc on fcc.idt_financial_account_type = fatc.idt_financial_account_type inner join otis.safepay_adm_transaction_status_history tsh on ft.idt_transaction_status_history = tsh.idt_transaction_status_history inner join otis.safepay_adm_transaction_status ts on tsh.idt_transaction_status = ts.idt_transaction_status where ft.idt_transaction in (select idt_transaction from otis.safepay_adm_transaction where dat_creation between to_date('01/01/2021', 'dd/MM/yyyy') and to_date('30/06/2021', 'dd/MM/yyyy')) and ((fcd.idt_financial_account_type = 4 and fcc.idt_financial_account_type = 2 ) or ( fcd.idt_financial_account_type = 75 and fcc.idt_financial_account_type = 76)) and fcc.idt_safepay_user not in (111946522, 118937547) and fcc.idt_safepay_user = fcd.idt_safepay_user group by ft.idt_transaction having count(ft.idt_transaction) > 1", 
+    "unload_params": "parallel off HEADER ADDQUOTES allowoverwrite encrypted"
+}'
+
+Onde: 
+	application_username = usuário de aplicação da AWS
+	s3_path = nome da pasta que será criada dentro do bucket do S3, onde seu arquivo será armazenado
+	query_command = a query a ser executada. A query tem que estar em uma linha só, sem comentários e sem ponto e vírgula
+	unload_params = parâmetros de extração do S3. Mais informações no link https://docs.aws.amazon.com/pt_br/redshift/latest/dg/r_UNLOAD.html
+	
+4 - Clique em 'Trigger' e acompanhe a execução no item 'Tree View'
+	a. seguindo a legenda, se a 'bola' ou algum 'quadrado' ficar vermelho, deu erro na execução. Se for em um dos 'quadrados', você pode clicar nele e clicar no botão 'View Log'
+	b. se a 'bola' e os 'quadrados' ficarem verde escuro, a execução foi finalizada com sucesso. Então clique no primeiro 'quadrado', clique no botão 'View Log' e procure o caminho do bucket do S3 onde está o arquivo gerado (ele fica logo abaixo da query que você mandou executar)	
+
+
+5 - com o caminho do bucket do S3 copiado, prepare a linha de comando para a extração desse arquivo para a sua estação de trabalho, segue o exemplo:
+
+aws --profile tombamento-miami-prod --recursive s3 cp s3://pagseguro-data-xpress-output/tombamento-miami/common-unload/extracao_transaction/day=2022-03-23 c:\Sammy
+
+Onde: 
+
+tombamento-miami-prod = o 'apelido' da conexão que você criou no arquivo 'credentials'
+s3://pagseguro-data-xpress-output/tombamento-miami/common-unload/extracao_transaction/day=2022-03-23 = o caminho do S3 que você copiou da DAG do AirFlow
+c:\Sammy = a pasta onde você quer que o arquivo seja gravado
+
+
+6 - abra o prompt de comando do Windows e execute o comando que montou no passo 5
+
+O arquivo terá o nome '000', é um arquivo texto, então você pode renomeá-lo e colocar a extensão .csv
+
+
+Pronto! 

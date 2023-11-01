@@ -1,0 +1,3 @@
+alter table cip_liquidator_adm.nonexist_recovery_idempotency rename to cip_liquidator_adm.nonexist_recovery_idempotency_old;
+
+alter table cip_liquidator_adm.nonexist_recovery_idempotency_new rename to cip_liquidator_adm.nonexist_recovery_idempotency;

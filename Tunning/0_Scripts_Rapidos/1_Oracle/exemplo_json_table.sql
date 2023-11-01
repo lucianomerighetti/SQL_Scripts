@@ -1,0 +1,28 @@
+select 
+    IDT_RECEIVABLE,
+    diff,
+    NUM_VERSION,
+    IDT_TRANSACTION
+    FROM (
+    SELECT ri.IDT_RECEIVABLE,
+    ri.NUM_TOTAL_AMOUNT,
+    sum(fees.total_fee_amount) AS feesSum,
+    l.IDT_SELLER_SAFEPAY_USER ,
+    l.IDT_TRANSACTION , ri.IND_STATUS, ri.NUM_VERSION , rui.COD_CUSTOMER_INTERMEDIARY,
+    ri.NUM_TOTAL_AMOUNT - sum(fees.total_fee_amount) AS diff
+    FROM SMOREIRA.TMP_TRANSACTION_NAO_MOV t
+    JOIN RECEIVABLES_ADM.LEGACY l ON t.IDT_TRANSACTION = l.IDT_TRANSACTION 
+    JOIN RECEIVABLES_ADM.PAYMENT p ON l.IDT_LEGACY  = p.IDT_LEGACY 
+    JOIN RECEIVABLES_ADM.RECEIVABLE_INTERNAL ri ON ri.IDT_PAYMENT = p.IDT_PAYMENT
+    JOIN RECEIVABLES_ADM.RECEIVABLE_UNIT_INTERNAL  rui ON rui.idt_receivable_unit = ri.IDT_RECEIVABLE_UNIT,
+            json_table(ri.JSN_SELLER_FEE, '$.amount' COLUMNS (
+                        total_fee_amount PATH '$'
+                    )
+            ) AS fees
+    WHERE 1=1
+    AND ri.NUM_SETTLE_AMOUNT = 0
+    AND ri.NUM_SETTLED_AMOUNT  = 0
+    AND t.ind_status = 'PENDENTE'
+    AND rui.COD_CUSTOMER_INTERMEDIARY = 'b198a9a5-12e2-46b5-9d69-32cfcf3c9e15'
+    GROUP BY ri.IDT_RECEIVABLE , ri.NUM_TOTAL_AMOUNT, ri.JSN_SELLER_FEE.total_fee_amount, l.IDT_SELLER_SAFEPAY_USER , l.IDT_TRANSACTION, ri.IND_STATUS, ri.NUM_VERSION, rui.COD_CUSTOMER_INTERMEDIARY )
+    ;

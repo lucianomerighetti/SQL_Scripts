@@ -1,0 +1,12 @@
+p:
+cd Aplicativos\pgAdmin 4\v2\runtime
+
+psql -h bd-paymentschedule.coid1xsnbqhf.sa-east-1.rds.amazonaws.com -p 5432 -d paymentschedule -U paymentscheduleworkerubr -f "P:\smoreira\queries\0_Times\1_Miami\correcao_dat_block\insert_tmp_v2.sql"
+
+p:
+cd Aplicativos\pgAdmin 4\v2\runtime
+
+psql -h bd-paymentschedule.coid1xsnbqhf.sa-east-1.rds.amazonaws.com -p 5432 -d paymentschedule -U manut_paymentschedule_adm -f "P:\smoreira\queries\0_Times\1_Miami\correcao_dat_block\validacao_diff.sql" > P:\smoreira\queries\0_Times\1_Miami\correcao_dat_block\validacao_diff.log
+
+
+FOR /F "usebackq" %A IN (`dir C:\Users\smoreira\git\database-migration\src\main\resources\db\migration\*.sql /b/a-d`) DO psql -h localhost -p 5432 -d fidc -U fidc_adm -f %A

@@ -1,0 +1,27 @@
+Leitura AWR
+
+- Verificar o DB Time
+- Verificar o tempo gasto no 'Time Model Statistics'
+- Verificar parâmetros (principalmente de memória)
+
+
+- Verificar a quantidade de Cores do Banco
+- Verificar o Elapsed Time e DB Time
+- Calcular o DB Time * Core. Se o número calculado for muito diferente do que aparece no próprio DB Time, algo está errado.
+
+Tempo no banco de Dados
+--- Tempo de CPU e Tempo de NÃO CPU
+------ Tempo de CPU: SQL Ordered by CPU Time
+--------- olhar %Total
+------------ Verificar os que tem o maior valor e tentar otimizar
+
+------ Tempo de NÃO CPU:  Foreground Wait Events
+--------- se os maiores valores forem de leitura: SQL ordered by Gets
+--------- se os maiores valores forem de leitura: SQL ordered by Reads
+--------- se os maiores valores forem de leitura: Segment Statistics\Segments by Logical Reads (Cache)
+--------- se os maiores valores forem de leitura: Segment Statistics\Segments by Physical Reads (Disco)
+--------- olhar %Total
+------------ Verificar os que tem o maior valor e tentar otimizar
+
+
+-> Parse time alto: select repetitivos sem binds

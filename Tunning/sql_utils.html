@@ -1,0 +1,1152 @@
+<html>
+
+	<h2>ORACLE</h2>
+	<h3>Constroi EXEC REFRESH FAST</h3>
+	&nbsp;&nbsp;&nbsp; SELECT 'EXEC DBMS_SNAPSHOT.REFRESH('''|| OWNER || '.' || NAME|| ''', ''F'', atomic_refresh=>false);' FROM SYS.DBA_REFRESH_CHILDREN WHERE RNAME = 'RFGRP_SAFEPAY';<br/>
+
+	<h3>Tratar IMs</h3>
+		&nbsp;&nbsp;&nbsp; SELECT e.owner, e.segment_name, count(e.extent_id) "EXTENTS", sum(e.bytes)/1024/1024 "SIZE (MB)" FROM dba_extents e
+<br/>	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; where E.SEGMENT_NAME like 'MLOG$%' 
+<br/>	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; GROUP BY e.owner, e.segment_name
+<br/>	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; HAVING sum(e.bytes) > (SELECT initial_extent*2 FROM dba_tables t
+<br/>	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WHERE t.table_name = e.segment_name
+<br/>   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AND t.owner = e.owner)
+<br/>	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; AND sum (e.bytes) > 1048576   -- 1MB
+<br/>	&nbsp;&nbsp;&nbsp; ORDER BY E.OWNER, E.SEGMENT_NAME;	
+<br/>	&nbsp;&nbsp;&nbsp; /*Resolver o problema acima*/ alter table SAFEPAY_ADM.MLOG$_CREDIT_CARD move;
+
+<br/><br/>	&nbsp;&nbsp;&nbsp; select * from log_report_adm.job_status_detail where status != 'OK';
+<br/><br/>	&nbsp;&nbsp;&nbsp; select MVIEW_NAME from dba_mviews where refresh_method <> last_refresh_type and last_refresh_type <> 'FAST' ;	
+<br/><br/>	&nbsp;&nbsp;&nbsp;--<b>"JOBS_BROKEN_FAILURES"</b>
+<br/> &nbsp;&nbsp;&nbsp;SELECT COUNT(1) FROM DBA_JOBS where BROKEN = 'Y' or failures > 16;
+<br/><br/> &nbsp;&nbsp;&nbsp;--<b>"MVIEW_SEM_REFRES_GROUP"</b>
+<br/>	&nbsp;&nbsp;&nbsp;select   count(1) from dba_mviews a where not exists (select 2 from dba_refresh_children b where a.mview_name = b.name) ;
+<br/><br/>	&nbsp;&nbsp;&nbsp;--<b>"ERRO_NA_EXECUCAON_REFRESH"</b>
+<br/>	&nbsp;&nbsp;&nbsp;select count(1) from dba_jobs b, dba_rgroup a where b.job = a.job and (b.failures > 15 or b.BROKEN = 'Y' or b.next_date < sysdate - (2/24)) ;
+<br/>	&nbsp;&nbsp;&nbsp;select name     from dba_jobs b, dba_rgroup a where b.job = a.job and (b.failures > 15 or b.BROKEN = 'Y' or b.next_date < sysdate - (2/24)) ;
+<br/><br/>	&nbsp;&nbsp;&nbsp;--<b>"LAST_REFRESH_NOT_EQUAL_REFRESH_METHOD"</b>
+<br/>	&nbsp;&nbsp;&nbsp;select count(1) from dba_mviews where refresh_method <> last_refresh_type and last_refresh_type <> 'FAST' ;
+		
+<br/>
+	
+	<h3>Descobrir LOCKS.</h3>
+	&nbsp;&nbsp;&nbsp;select c.owner, c.object_name, c.object_type, b.sid, b.serial#, b.status, b.osuser, b.machine from GV$locked_object a, GV$session b, dba_objects c<br/>
+	&nbsp;&nbsp;&nbsp;where b.sid = a.session_id<br/>
+	&nbsp;&nbsp;&nbsp;and a.object_id = c.object_id;<br/><br/>
+	
+	&nbsp;&nbsp;&nbsp;SELECT SID, USER_NAME, LAST_SQL_ACTIVE_TIME FROM V$OPEN_CURSOR WHERE ADDRESS in <br/>
+	&nbsp;&nbsp;&nbsp;(select ADDRESS from gv$sql where sql_id in ('46qpqawy1du13', 'oczngwc16d143'));<br/><br/>
+
+	&nbsp;&nbsp;&nbsp;SELECT s1.program||'=> '||s1.username||'@'||s1.machine||' ( SID='||s1.sid||' SERIAL='||s1.serial#||' )' AS session_blocking,<br/>
+	&nbsp;&nbsp;&nbsp;s2.program||'=> '||s2.username||'@'||s2.machine||' ( SID='||s2.sid||' SERIAL='||s2.serial#||' )' AS session_blocked,<br/>
+	&nbsp;&nbsp;&nbsp;s2.seconds_in_wait,<br/>
+	&nbsp;&nbsp;&nbsp;lt.NAME AS lock_type<br/>
+	&nbsp;&nbsp;&nbsp;FROM GV$lock l1,<br/>
+	&nbsp;&nbsp;&nbsp;GV$session s1,<br/>
+	&nbsp;&nbsp;&nbsp;GV$lock l2,<br/>
+	&nbsp;&nbsp;&nbsp;GV$session s2,<br/>
+	&nbsp;&nbsp;&nbsp;GV$lock_type lt<br/>
+	&nbsp;&nbsp;&nbsp;WHERE s1.sid = l1.sid<br/>
+	&nbsp;&nbsp;&nbsp;AND s2.sid = l2.sid<br/>
+	&nbsp;&nbsp;&nbsp;AND l1.BLOCK = 1<br/>
+	&nbsp;&nbsp;&nbsp;AND l2.request > 0<br/>
+	&nbsp;&nbsp;&nbsp;AND l1.id1 = l2.id1<br/>
+	&nbsp;&nbsp;&nbsp;AND l1.type = lt.type<br/>
+	&nbsp;&nbsp;&nbsp;order by s1.sid,s2.seconds_in_wait;<br/>
+
+
+    <br/>
+	&nbsp;&nbsp;&nbsp;SELECT s1.program||'=> '||s1.username||'@'||s1.machine||' ( SID='||s1.sid||' SERIAL='||s1.serial#||' )' AS session_blocking,<br/>
+	&nbsp;&nbsp;&nbsp;s2.program||'=> '||s2.username||'@'||s2.machine||' ( SID='||s2.sid||' SERIAL='||s2.serial#||' )' AS session_blocked,<br/>
+	&nbsp;&nbsp;&nbsp;s2.seconds_in_wait,       <br/>
+	&nbsp;&nbsp;&nbsp;lt.NAME AS lock_type<br/>
+	&nbsp;&nbsp;&nbsp;FROM GV$lock l1, <br/>
+	&nbsp;&nbsp;&nbsp;GV$session s1, <br/>
+	&nbsp;&nbsp;&nbsp;GV$lock l2, <br/>
+	&nbsp;&nbsp;&nbsp;GV$session s2,<br/>
+	&nbsp;&nbsp;&nbsp;GV$lock_type lt<br/>
+	&nbsp;&nbsp;&nbsp;WHERE s1.sid = l1.sid <br/>
+	&nbsp;&nbsp;&nbsp;AND s2.sid = l2.sid<br/>
+	&nbsp;&nbsp;&nbsp;AND l1.BLOCK = 1 <br/>
+	&nbsp;&nbsp;&nbsp;AND l2.request > 0<br/>
+	&nbsp;&nbsp;&nbsp;AND l1.id1 = l2.id1<br/>
+	&nbsp;&nbsp;&nbsp;AND l1.type = lt.type<br/>
+	&nbsp;&nbsp;&nbsp;order by s1.sid,s2.seconds_in_wait;<br/>
+	<br/>
+	
+	<h3>Descobrir LOCKS de objetos.</h3> <br/>
+	select <br/>
+	c.owner, <br/>
+	c.object_name, <br/>
+	c.object_type, <br/>
+	b.sid, <br/>
+	b.serial#, <br/>
+	b.status, <br/>
+	b.osuser, <br/>
+	b.machine <br/>
+	from <br/>
+	--see code depot for full locking script <br/>
+	GV$locked_object a , <br/>
+	GV$session b, <br/>
+	dba_objects c <br/>
+	where <br/>
+	b.sid = a.session_id <br/>
+	and <br/>
+	a.object_id = c.object_id; <br/>
+	<br/>
+	
+	<br/>
+	SELECT s1.program||'=> '||s1.username||'@'||s1.machine||' ( SID='||s1.sid||' SERIAL='||s1.serial#||' )' AS session_blocking,<br/>
+     s2.program||'=> '||s2.username||'@'||s2.machine||' ( SID='||s2.sid||' SERIAL='||s2.serial#||' )' AS session_blocked,<br/>
+     s2.seconds_in_wait,       <br/>
+     lt.NAME AS lock_type<br/>
+   FROM GV$lock l1, <br/>
+     GV$session s1, <br/>
+     GV$lock l2, <br/>
+     GV$session s2,<br/>
+     GV$lock_type lt<br/>
+ WHERE s1.sid = l1.sid <br/>
+     AND s2.sid = l2.sid<br/>
+     AND l1.BLOCK = 1 <br/>
+     AND l2.request > 0<br/>
+     AND l1.id1 = l2.id1<br/>
+     AND l1.type = lt.type<br/>
+  order by s1.sid,s2.seconds_in_wait;<br/>
+  
+<br/>  
+ 
+<br/> 
+   SELECT A.OBJECT_NAME, A.OBJECT_TYPE, <br/>
+            B.ORACLE_USERNAME, B.OS_USER_NAME, <br/>
+            C.SID, C.SERIAL#, C.LOCKWAIT, C.MACHINE, C.TERMINAL, C.STATE, <br/>
+            D.SQL_TEXT <br/>
+      FROM SYS.DBA_OBJECTS A, <br/>
+          GV$LOCKED_OBJECT B, <br/>
+          GV$SESSION C, <br/>
+          GV$SQLTEXT D <br/>
+      WHERE A.OBJECT_ID = B.OBJECT_ID <br/>
+      AND C.SID = B.SESSION_ID <br/>
+      AND C.SQL_HASH_VALUE = D.HASH_VALUE <br/>
+	<br/>
+	
+	<h3>Verificar contenção.</h3>	
+	select owner, object_name, subobject_name, object_type, statistic_name, sum(value) sum_value<br/>
+	from gv$segment_statistics<br/>
+	where (lower(statistic_name) like '%wait%' or lower(statistic_name) like '%contention%')<br/>
+	and owner = '<SEU_OWNER>'<br/>
+	group by owner, object_name, subobject_name, object_type, statistic_name<br/>
+	order by sum_value desc;<br/><br/>	
+	
+	<h3>Listener - Verificar, Startar e Criar.</h3>
+	&nbsp;&nbsp;&nbsp; SELECT * FROM DBA_SERVICES;<br/>
+	&nbsp;&nbsp;&nbsp; EXEC DBMS_SERVICE.CREATE_SERVICE(SERVICE_NAME => 'GALAPAGOS.PAGSEGURO', NETWORK_NAME =>'GALAPAGOS.PAGSEGURO' );<br/>
+	&nbsp;&nbsp;&nbsp; EXEC DBMS_SERVICE.START_SERVICE('GALAPAGOS.PAGSEGURO');<br/>
+	<br/>
+
+	<h3>Obter os dados de flashback/flash recover area.</h3>
+	&nbsp;&nbsp;&nbsp; SELECT * FROM NOME_DA_TABELA AS OF TIMESTAMP SYSTIMESTAMP - INTERVAL '1440' MINUTE;	
+	<br/>
+	
+	<h3>Consulta as MLOGS associadas a TABELA (MASTER).</h3>
+	&nbsp;&nbsp;&nbsp; SELECT * FROM DBA_MVIEW_LOGS WHERE MASTER LIKE 'TRANSACTION_CHECKOUT%';	
+	<br/>
+	
+	<h3>Consulta os destinos da replicação.</h3>
+	&nbsp;&nbsp;&nbsp; SELECT * FROM DBA_REGISTERED_SNAPSHOTS WHERE NAME = 'SAFEUSER_REGISTERED_INFO';	
+	<br/>
+	
+	
+	<h3>Resize TableSpace and Create Datafile</h3>
+	-- Tamanho da table space<br/>
+	&nbsp;&nbsp;&nbsp;SELECT SUM(BYTES/1024/1024) FROM DBA_DATA_FILES WHERE TABLESPACE_NAME = 'TSDSAFEPAY01';<br/>	
+	<br/>
+	
+	-- Criando um datafile para a tablespace<br/>
+	&nbsp;&nbsp;&nbsp;ALTER TABLESPACE TSDSAFEPAYCHEC01 ADD DATAFILE '/u00/oradata/gpg1/datafile/tsdsafepaychec02.dbf' size 1G;<br/>	
+	<br/>
+	
+	-- Alterando o tamanho do datafile<br/>
+	&nbsp;&nbsp;&nbsp;ALTER DATABASE DATAFILE '/u01/oradata/pho1/datafile/tsdsafepay01_01.dbf' RESIZE 4G;<br/>	
+	<br/>
+	
+	<h3>Kill Sessions Transacao Distribuida</h3>
+	select 'rollback force ''' || LOCAL_TRAN_ID || '''; -- ' || STATE  from SYS.PENDING_TRANS$ WHERE STATE <> 'forced rollback'; <br/>	
+	<br/>
+	
+	<h3>Kill Sessions</h3>
+	&nbsp;&nbsp;&nbsp;SET SERVEROUTPUT ON <br/>
+	&nbsp;&nbsp;&nbsp;DECLARE <br/>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;V1_SID    NUMBER; <br/>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;V1_SERIAL NUMBER; <br/>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CURSOR C1 IS<br/>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SELECT S.SID, S.SERIAL# FROM GV$SESSION S<br/>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WHERE S.USERNAME IN (SELECT DISTINCT USERNAME FROM GV$SESSION WHERE USERNAME != 'DBAAD');<br/>
+	&nbsp;&nbsp;&nbsp;BEGIN <br/>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OPEN C1; <br/>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LOOP <br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FETCH C1 INTO V1_SID, V1_SERIAL;<br/>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;EXIT WHEN C1%NOTFOUND;<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;BEGIN<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;EXECUTE IMMEDIATE 'ALTER SYSTEM KILL SESSION ' || '''' || V1_SID || ',' || V1_SERIAL || '''' || ' IMMEDIATE' ;<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DBMS_OUTPUT.PUT_LINE('SEÇÃO FECHADA: ' || '''' || V1_SID || ',' || V1_SERIAL || '''' || ' IMMEDIATE' ) ;<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;EXCEPTION<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;WHEN OTHERS THEN<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DBMS_OUTPUT.PUT_LINE('ERRO AO FECHAR A SEÇÃO: ' || '''' || V1_SID || ',' || V1_SERIAL || '''' || ' IMMEDIATE --> ' || SQLERRM ) ;<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END;<br/>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;END LOOP;<br/>
+	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CLOSE C1;<br/>
+	&nbsp;&nbsp;&nbsp;END;<br/>
+	&nbsp;&nbsp;&nbsp;/
+
+<h3>Transações Distribuidas</h3><br/>
+    &nbsp;&nbsp;&nbsp;select * from dba_2pc_pending;<br/>
+    &nbsp;&nbsp;&nbsp;force rollback local_tran_id;<br/>
+
+<h3>Heavy Queries</h3><br/>
+    &nbsp;&nbsp;&nbsp;-- Heavy queries<br/>
+    &nbsp;&nbsp;&nbsp;SELECT t2.username,module, t1.disk_reads, t1.executions,<br/>
+    &nbsp;&nbsp;&nbsp;t1.disk_reads / DECODE(t1.executions, 0, 1, t1.executions) as exec_ratio,<br/>
+    &nbsp;&nbsp;&nbsp;t1.command_type, t1.sql_text<br/>
+    &nbsp;&nbsp;&nbsp;FROM GV$sqlarea t1, dba_users t2<br/>
+    &nbsp;&nbsp;&nbsp;where T1.PARSING_USER_ID = T2.USER_ID<br/>
+    &nbsp;&nbsp;&nbsp;and t2.username in ('SAFEPAY_ADMINUBR')<br/>
+    &nbsp;&nbsp;&nbsp;ORDER by t1.disk_reads DESC;<br/>
+
+<h3>Historico de Querys</h3><br/>
+    &nbsp;&nbsp;&nbsp;-- Historico de Querys<br/>
+    &nbsp;&nbsp;&nbsp;SELECT sql_id,<br/>
+    &nbsp;&nbsp;&nbsp;child_number,<br/>
+    &nbsp;&nbsp;&nbsp;NAME,<br/>
+    &nbsp;&nbsp;&nbsp;position,<br/>
+    &nbsp;&nbsp;&nbsp;datatype,<br/>
+    &nbsp;&nbsp;&nbsp;datatype_string,<br/>
+    &nbsp;&nbsp;&nbsp;max_length,<br/>
+    &nbsp;&nbsp;&nbsp;was_captured,<br/>
+    &nbsp;&nbsp;&nbsp;last_captured,<br/>
+    &nbsp;&nbsp;&nbsp;value_string,<br/>
+    &nbsp;&nbsp;&nbsp;ANYDATA.ACCESSTIMESTAMP(VALUE_ANYDATA)<br/>
+    &nbsp;&nbsp;&nbsp;FROM   gv$sql_bind_capture c<br/>
+    &nbsp;&nbsp;&nbsp;WHERE  c.SQL_ID = '2cg6husnypwr8';<br/>
+    &nbsp;&nbsp;&nbsp;SELECT * FROM table(DBMS_XPLAN.DISPLAY_CURSOR('cc0t5ukzdbhgq',0));<br/>
+
+<h3>IMs</h3><br/>
+<br/>
+SELECT r.name snapname,<br/>
+snapid,<br/>
+nvl(r.snapshot_site, 'not registered') snapsite,<br/>
+snaptime<br/>
+FROM  sys.slog$ s,<br/>
+dba_registered_snapshots r<br/>
+WHERE s.snapid=r.snapshot_id(+) and<br/>
+snaptime < sysdate -1<br/>
+ORDER by r.name;<br/>
+<br/>
+SELECT e.owner,<br/>
+e.segment_name,<br/>
+e.extents "EXTENTS",<br/>
+e.bytes/1024/1024 "SIZE (MB)"<br/>
+FROM<br/>
+dba_tables t,<br/>
+dba_segments e<br/>
+WHERE<br/>
+e.segment_name like 'MLOG$%' and<br/>
+t.owner = e.owner and<br/>
+t.table_name = e.segment_name and<br/>
+e.bytes > t.initial_extent*2 and<br/>
+e.bytes > 1048576 &1  -- 1MB<br/>
+ORDER BY e.owner, e.segment_name;<br/>
+<br/>
+declare<br/>
+    v_bd_version number(1);<br/>
+BEGIN<br/>
+    DBMS_OUTPUT.ENABLE(10000000);<br/>
+    select substr(version, 1, 1) into v_bd_version from GV$instance;<br/>
+--<br/>
+-- Verificacao 1<br/>
+--<br/>
+  for c1 in (select owner, mview_name, nvl(master_link, 'INTERNO') master_link<br/>
+             from dba_mviews a<br/>
+             where not exists<br/>
+                 (select 2<br/>
+                  from dba_refresh_children b<br/>
+                  where a.mview_name = b.name<br/>
+                 )<br/>
+             order by 1,2<br/>
+            )<br/>
+  loop<br/>
+      dbms_output.put_line ('Materialized Views sem Refresh Group');<br/>
+      dbms_output.put_line ('----------------------------------');<br/>
+      dbms_output.put_line('Owner: '||c1.owner);<br/>
+      dbms_output.put_line('Materialized View: '||c1.mview_name);<br/>
+      dbms_output.put_line('Origem: '||c1.master_link);<br/>
+      dbms_output.put_line ('----------------------------------');<br/>
+      dbms_output.put_line ('.');<br/>
+  end loop;<br/>
+<br/>
+--<br/>
+-- Verificacao 2<br/>
+--<br/>
+<br/>
+  for c2 in (select b.schema_user SCHEMA_USER, a.name, b.last_date LAST_DATE, b.failures, broken, b.next_date<br/>
+             from dba_jobs b,<br/>
+                  dba_rgroup a<br/>
+             where b.job = a.job<br/>
+                 and (b.failures > 15<br/>
+                      or b.BROKEN = 'Y'<br/>
+                      or b.next_date < sysdate - (2/24)<br/>
+                     )<br/>
+             order by 1,2<br/>
+            )<br/>
+  loop<br/>
+      dbms_output.put_line ('Erro na execucao do Refresh');<br/>
+      dbms_output.put_line ('----------------------------------');<br/>
+      dbms_output.put_line('Owner: '||c2.schema_user);<br/>
+      dbms_output.put_line('Refresh Name: '||c2.name);<br/>
+      dbms_output.put_line('Data do ultimo refresh: '||c2.last_date);<br/>
+      dbms_output.put_line('valor dba_jobs.broken: '||c2.broken);<br/>
+      dbms_output.put_line('valor dba_jobs.failures: '||c2.failures);<br/>
+      dbms_output.put_line('valor dba_jobs.nwxt_date: '||c2.next_date);<br/>
+      dbms_output.put_line ('----------------------------------');<br/>
+      dbms_output.put_line ('.');<br/>
+  end loop;<br/>
+<br/>
+--<br/>
+-- Verificacao 3<br/>
+--<br/>
+<br/>
+  if v_bd_version > 8 then<br/>
+      for c3 in (select owner, mview_name, refresh_method, last_refresh_type<br/>
+                 from dba_mviews<br/>
+                 where refresh_method <> last_refresh_type<br/>
+                     and last_refresh_type <> 'FAST'<br/>
+                 order by 1,2<br/>
+                )<br/>
+      loop<br/>
+          dbms_output.put_line ('');<br/>
+          dbms_output.put_line ('Inconsistencia entre o Metodo normal de Refresh e o ultimo Refresh Feito');<br/>
+          dbms_output.put_line ('----------------------------------');<br/>
+          dbms_output.put_line('Owner: '||c3.owner);<br/>
+          dbms_output.put_line('Materialized View: '||c3.mview_name);<br/>
+          dbms_output.put_line('Metodo do refresh: '||c3.refresh_method);<br/>
+          dbms_output.put_line('Tipo do ultimo refresh: '||c3.last_refresh_type);<br/>
+          dbms_output.put_line ('----------------------------------');<br/>
+          dbms_output.put_line ('.');<br/>
+          dbms_output.put_line ('Lembrar que o refresh type por default tem que ser FAST');<br/>
+     end loop;<br/>
+  end if;<br/>
+<br/>
+--<br/>
+-- Verificacao 4 - Verifica se o refresh estÃ¡endo executado alÃ©do tempo previsto:<br/>
+--<br/>
+-- Se tempo de execucao for maior que delta ou duas hora, alarme eh emitido.<br/>
+-- Delta: - Intervalo de execucao do refresh mais margem de erro.<br/>
+--        - Calculo do delta: (-0,3662*(INTERVALO)*(INTERVALO)+1,4902*(INTERVALO)+0,001)<br/>
+--<br/>
+<br/>
+  for c4 in (SELECT schema_user SCHEMA_USER, a.job, c.name, a.last_date LAST_DATE<br/>
+             FROM  dba_jobs a,<br/>
+                   dba_rgroup c<br/>
+             WHERE a.job = c.job AND<br/>
+                (((sysdate - a.this_date) > (SELECT (-0.3662*(b.next_date - b.last_date)*(b.next_date - b.last_date)+1.4902*(b.next_date - b.last_date)+0.001) -- Delta<br/>
+                                             FROM dba_jobs b<br/>
+                                             WHERE b.job = a.job)) OR<br/>
+                 ((sysdate - a.this_date) > (SELECT (2/24) FROM DUAL))) -- Se executando mais que 1 hora.<br/>
+             ORDER BY 1,2<br/>
+             )<br/>
+  loop<br/>
+      dbms_output.put_line ('Refresh executando alem do tempo previsto');<br/>
+      dbms_output.put_line ('-----------------------------------------');<br/>
+      dbms_output.put_line ('Owner: '||c4.schema_user);<br/>
+      dbms_output.put_line ('Job: '||c4.job);<br/>
+      dbms_output.put_line ('Refresh Name: '||c4.name);<br/>
+      dbms_output.put_line ('Data do ultimo refresh: '||c4.last_date);<br/>
+      dbms_output.put_line ('-----------------------------------------');<br/>
+      dbms_output.put_line ('.');<br/>
+  end loop;<br/>
+<br/>
+--<br/>
+-- Verificacao 5 - Verifica se o refresh estÃ¡arado:<br/>
+--<br/>
+-- Se tempo atual menos tempo do ultimo refresh for maior que delta, alarme eh emitido.<br/>
+-- Delta: - Intervalo de execucao do refresh mais margem de erro.<br/>
+--        - Calculo do delta: (-0,3662*(INTERVALO)*(INTERVALO)+1,4902*(INTERVALO)+0,001)<br/>
+--<br/>
+<br/>
+--#  for c5 in (SELECT schema_user SCHEMA_USER, a.job, c.name, a.last_date LAST_DATE<br/>
+--#             FROM  dba_jobs a,<br/>
+--#                   dba_rgroup c<br/>
+--#             WHERE a.job = c.job<br/>
+--#             AND ((sysdate-a.last_date) > (SELECT (-0.3662*(b.next_date - b.last_date)*(b.next_date - b.last_date)+1.4902*(b.next_date - b.last_date)+0.001) -- Delta<br/>
+--#                                           FROM dba_jobs b<br/>
+--#                                           WHERE b.job = a.job))<br/>
+--#             ORDER BY 1,2<br/>
+--#             )<br/>
+--#  loop<br/>
+--#      dbms_output.put_line ('Refresh NÃ£ executando');<br/>
+--#      dbms_output.put_line ('---------------------------------------');<br/>
+--#      dbms_output.put_line ('Owner: '||c5.schema_user);<br/>
+--#      dbms_output.put_line ('Job: '||c5.job);<br/>
+--#      dbms_output.put_line ('Refresh Name: '||c5.name);<br/>
+--#      dbms_output.put_line ('Data do ultimo refresh: '||c5.last_date);<br/>
+--#      dbms_output.put_line ('---------------------------------------');<br/>
+--#      dbms_output.put_line ('.');<br/>
+--#  end loop;<br/>
+<br/>
+end;<br/>
+/<br/>
+<br/>
+
+<h3>Ver o status de atualização de REFRESH</h3><br/>
+<br/>
+SELECT  s.sql_id,<br/>
+s.logon_time,<br/>
+s.inst_id,sl.TARGET,<br/>
+p.spid,<br/>
+s.sid,<br/>
+s.serial#,<br/>
+ROUND(sl.sofar/sl.totalwork*100, 1) "%DONE",<br/>
+s.username, s.osuser, s.machine,<br/>
+sl.OPNAME,<br/>
+ROUND(sl.elapsed_seconds/60) || ':' || MOD(sl.elapsed_seconds,60) elapsed,<br/>
+ROUND(sl.time_remaining/60) || ':' || MOD(sl.time_remaining,60) remaining<br/>
+FROM gv$session s,<br/>
+gv$session_longops sl,<br/>
+gv$process p<br/>
+WHERE  s.sid     = sl.sid<br/>
+AND    s.serial# = sl.serial#<br/>
+AND           sl.sofar <> sl.totalwork<br/>
+AND    sl.totalwork > 0<br/>
+AND    sl.inst_id = s.inst_id<br/>
+AND           p.inst_id = s.inst_id<br/>
+AND    p.inst_id = sl.inst_id<br/>
+AND    p.addr = s.paddr<br/>
+AND    p.inst_id = s.inst_id<br/>
+AND           P.INST_ID = SL.INST_ID<br/>
+order by s.inst_id, s.username, opname, target, sql_id ;<br/>
+
+<br/>
+with snapsite_threshould as
+(select substr(val_statement,
+1,
+instr(val_statement,
+'=') - 1) snapsite,
+to_number(substr(val_statement,
+instr(val_statement,
+'=') + 1,
+3000)) tolerance_seconds
+from   monitor_adm.monitor_config c
+where  c.idt_monitor = 4)
+SELECT r.owner,
+r.name snapname,
+snapid,
+r.snapshot_site,
+snaptime,
+(sysdate - snaptime) * 24 * 60 * 60 delay,
+t.tolerance_seconds,
+decode(t.tolerance_seconds,
+null,
+'default snapsite [' || r.snapshot_site || '] nao cadastrado',
+null) message
+FROM   sys.slog$ s
+join   dba_registered_snapshots r
+on     s.snapid = r.snapshot_id
+left   join snapsite_threshould t
+--filtra por site
+on     t.snapsite = r.snapshot_site
+WHERE  (sysdate - s.snaptime) * 24 * 60 * 60 > nvl(t.tolerance_seconds,
+900);
+<br/>
+
+<br/>
+SELECT r.owner,
+r.name snapname,
+snapid,
+r.snapshot_site,
+snaptime,
+(sysdate - snaptime)* 24 * 60 * 60 delay
+FROM   sys.slog$ s
+join   dba_registered_snapshots r
+on     s.snapid = r.snapshot_id
+where r.snapshot_site = 'PHO2.UOL.COM.BR'
+and (sysdate - s.snaptime) * 24 * 60 * 60 > 900
+order by 6 desc;
+<br/>
+
+<br/>
+select     s.sid || ',' || s.serial# "SID/SERIAL"<br/>
+,     s.username<br/>
+,     s.osuser<br/>
+,     p.spid "OS PID"<br/>
+,     s.program<br/>
+, Vs.*<br/>
+from     GV$session s<br/>
+,     GV$process p<br/>
+, (<br/>
+select * from (select SQL_ID,sql_text, cpu_time/1000000000 cpu_time, elapsed_time/1000000000 elapsed_time <br/>
+from GV$sqlarea order by cpu_time desc, disk_reads desc )<br/>
+) VS<br/>
+Where     s.paddr = p.addr and<br/>
+s.sql_id = Vs.sql_id<br/>
+order      by to_number(p.spid),to_number(VS.cpu_time) desc, to_number(vs.elapsed_time) desc;  <br/>
+<br/>
+
+<br/>
+<h3>FK sem index </h3><br/>
+<br/>
+
+<br/>
+select F.*,<br/>
+'CREATE INDEX ' || F.TABLE_OWNER || '.' ||<br/>
+replace(substr(F.TABLE_NAME,1,4) ||<br/>
+substr(F.TABLE_NAME,DECODE(INSTR(F.TABLE_NAME,'_',1,1),0,NULL,INSTR(F.TABLE_NAME,'_',1,1)) + 1,4) ||<br/>
+substr(F.TABLE_NAME,DECODE(INSTR(F.TABLE_NAME,'_',1,2),0,NULL,INSTR(F.TABLE_NAME,'_',1,2)) + 1,4) ||<br/>
+substr(F.TABLE_NAME,DECODE(INSTR(F.TABLE_NAME,'_',1,3),0,NULL,INSTR(F.TABLE_NAME,'_',1,3)) + 1,4) ||<br/>
+substr(F.TABLE_NAME,DECODE(INSTR(F.TABLE_NAME,'_',1,4),0,NULL,INSTR(F.TABLE_NAME,'_',1,4)) + 1,4) ||<br/>
+substr(F.TABLE_NAME,DECODE(INSTR(F.TABLE_NAME,'_',1,5),0,NULL,INSTR(F.TABLE_NAME,'_',1,5)) + 1,4) ||<br/>
+substr(F.TABLE_NAME,DECODE(INSTR(F.TABLE_NAME,'_',1,6),0,NULL,INSTR(F.TABLE_NAME,'_',1,6)) + 1,4),'_','')<br/>
+|| '_IDX' || '0' || NVL(DI.CONT,1) || ' ON ' || F.TABLE_OWNER || '.' || F.TABLE_NAME || '( ' || F.COLUMNS ||  ' ) TABLESPACE ' || REPLACE(DA.DEFAULT_TABLESPACE,'TSD','TSI') || ' ONLINE;' as index_create<br/>
+from<br/>
+(<br/>
+SELECT TABLE_NAME,<br/>
+CONSTRAINT_NAME,<br/>
+TABLE_OWNER,<br/>
+CNAME1 || NVL2(CNAME2, ',' || CNAME2, NULL) ||<br/>
+NVL2(CNAME3, ',' || CNAME3, NULL) ||<br/>
+NVL2(CNAME4, ',' || CNAME4, NULL) ||<br/>
+NVL2(CNAME5, ',' || CNAME5, NULL) ||<br/>
+NVL2(CNAME6, ',' || CNAME6, NULL) ||<br/>
+NVL2(CNAME7, ',' || CNAME7, NULL) ||<br/>
+NVL2(CNAME8, ',' || CNAME8, NULL) COLUMNS<br/>
+FROM   (SELECT B.TABLE_NAME,<br/>
+B.CONSTRAINT_NAME,<br/>
+B.OWNER TABLE_OWNER,<br/>
+MAX(DECODE(POSITION, 1, COLUMN_NAME, NULL)) CNAME1,<br/>
+MAX(DECODE(POSITION, 2, COLUMN_NAME, NULL)) CNAME2,<br/>
+MAX(DECODE(POSITION, 3, COLUMN_NAME, NULL)) CNAME3,<br/>
+MAX(DECODE(POSITION, 4, COLUMN_NAME, NULL)) CNAME4,<br/>
+MAX(DECODE(POSITION, 5, COLUMN_NAME, NULL)) CNAME5,<br/>
+MAX(DECODE(POSITION, 6, COLUMN_NAME, NULL)) CNAME6,<br/>
+MAX(DECODE(POSITION, 7, COLUMN_NAME, NULL)) CNAME7,<br/>
+MAX(DECODE(POSITION, 8, COLUMN_NAME, NULL)) CNAME8,<br/>
+COUNT(*) COL_CNT<br/>
+FROM   (SELECT SUBSTR(TABLE_NAME, 1, 30) TABLE_NAME,<br/>
+SUBSTR(CONSTRAINT_NAME, 1, 30) CONSTRAINT_NAME,<br/>
+SUBSTR(OWNER, 1, 30) TABLE_OWNER,<br/>
+SUBSTR(COLUMN_NAME, 1, 30) COLUMN_NAME,<br/>
+POSITION<br/>
+FROM   DBA_CONS_COLUMNS C<br/>
+WHERE  C.owner like '%ADM%') A,<br/>
+DBA_CONSTRAINTS B<br/>
+WHERE  A.CONSTRAINT_NAME = B.CONSTRAINT_NAME<br/>
+AND    B.CONSTRAINT_TYPE = 'R'<br/>
+AND    B.owner LIKE '%ADM%'<br/>
+GROUP  BY B.TABLE_NAME,<br/>
+B.CONSTRAINT_NAME,<br/>
+B.OWNER) CONS<br/>
+WHERE  COL_CNT > ALL (SELECT COUNT(*)<br/>
+FROM   DBA_IND_COLUMNS I,<br/>
+DBA_INDEXES     UI<br/>
+WHERE  I.TABLE_NAME = CONS.TABLE_NAME<br/>
+AND    I.COLUMN_NAME IN (CNAME1,<br/>
+	 CNAME2,<br/>
+	 CNAME3,<br/>
+	 CNAME4,<br/>
+	 CNAME5,<br/>
+	 CNAME6,<br/>
+	 CNAME7,<br/>
+	 CNAME8)<br/>
+AND    I.COLUMN_POSITION <= CONS.COL_CNT<br/>
+AND    UI.TABLE_NAME = I.TABLE_NAME<br/>
+AND    UI.INDEX_NAME = I.INDEX_NAME<br/>
+AND    UI.INDEX_TYPE IN ('NORMAL', 'NORMAL/REV')<br/>
+AND    i.TABLE_OWNER LIKE '%ADM%'<br/>
+GROUP  BY I.INDEX_NAME)<br/>
+) F<br/>
+left join <br/>
+(select count(DI.INDEX_NAME) + 1 as CONT,DI.TABLE_NAME,DI.OWNER from dba_indexes DI where DI.INDEX_NAME like '%IDX%' GROUP BY DI.TABLE_NAME,DI.OWNER) DI on F.TABLE_NAME = DI.TABLE_NAME and F.TABLE_OWNER = DI.OWNER <br/>
+inner join dba_users DA on DA.USERNAME = DI.OWNER<br/>
+order by F.TABLE_OWNER,F.table_name;<br/>
+<br/>
+
+<br/>
+<h3>Query para Bind Mismatch e achar sql_id </h3><br/>
+<br/>
+
+<br/>
+<br/>
+SELECT s.child_number, m.position, m.max_length,<br/>
+decode(m.datatype,1,'VARCHAR2',2,'NUMBER',180,'TIMESTAMP',m.datatype) AS datatype<br/>
+FROM gv$sql s, gv$sql_bind_metadata m<br/>
+WHERE s.sql_id = 'abhrq8tbahv3x'<br/>
+AND s.child_address = m.address<br/>
+ORDER BY 1, 2;<br/>
+<br/>
+
+<br/>
+--Top 10 by Physical Reads:<br/>
+SELECT * FROM<br/>
+(SELECT substr(sql_text,1,40) sql,<br/>
+disk_reads, executions,<br/>
+--disk_reads/executions "Reads/Exec",<br/>
+hash_value,address,sql_fulltext,sql_id<br/>
+FROM GV$SQLAREA<br/>
+WHERE disk_reads > 1000<br/>
+ORDER BY disk_reads DESC)<br/>
+WHERE rownum <= 20<br/>
+;<br/>
+<br/>
+
+<br/>
+select Count(CHILD_NUMBER),<br/>
+SQL_ID<br/>
+from gv$sql_shared_cursor<br/>
+where BIND_MISMATCH = 'Y'<br/>
+group by SQL_ID having Count(CHILD_NUMBER) > 1<br/>
+order by sql_id ;<br/>
+<br/>
+
+<br/>
+select Count(CHILD_NUMBER),SQL_ID from gv$sql_shared_cursor where <br/>
+BIND_MISMATCH = 'Y'<br/>
+and exists (<br/>
+select sql_id from gv$sqlarea where sql_fulltext like '%SELECT%' and sql_fulltext not like '%$%'<br/>
+and gv$sqlarea.sql_id = gv$sql_shared_cursor.sql_id<br/>
+)<br/>
+group by SQL_ID having Count(CHILD_NUMBER) > 1 order by sql_id ;<br/>
+<br/>
+
+<br/>
+select * from DBA_HIST_ACTIVE_SESS_HISTORY where sql_id = 'dn0pbguzpna3n' order by sample_time asc;<br/>
+<br/>
+
+<br/>
+select * from gv$sql_shared_cursor where SQL_ID = 'dn0pbguzpna3n';<br/>
+<br/>
+
+<br/>
+select * from gv$sqlarea where sql_id = 'dn0pbguzpna3n';<br/>
+<br/>
+
+<br/>
+select * from GV$SQL_PLAN_MONITOR where sql_id = 'dn0pbguzpna3n';<br/>
+<br/>
+
+
+
+<br/>
+<h3>Query para Desfragmentação de Index </h3><br/>
+<br/>
+
+<br/>
+SPO estimate_index_size.txt;<br/>
+UNDEF owner table_name index_name exclusion_list exclusion_list2;<br/>
+DEF exclusion_list = "('ANONYMOUS','APEX_030200','APEX_040000','APEX_SSO','APPQOSSYS','CTXSYS','DBSNMP','DIP','EXFSYS','FLOWS_FILES','MDSYS','OLAPSYS','ORACLE_OCM','ORDDATA','ORDPLUGINS','ORDSYS','OUTLN','OWBSYS')";<br/>
+DEF exclusion_list2 = "('SI_INFORMTN_SCHEMA','SQLTXADMIN','SQLTXPLAIN','SYS','SYSMAN','SYSTEM','TRCANLZR','WMSYS','XDB','XS$NULL')";<br/>
+VAR random1 VARCHAR2(30);<br/>
+VAR random2 VARCHAR2(30);<br/>
+EXEC :random1 := DBMS_RANDOM.string('A', 30);<br/>
+EXEC :random2 := DBMS_RANDOM.string('X', 30);<br/>
+DELETE plan_table WHERE statement_id IN (:random1, :random2);<br/>
+<br/> 
+SET SERVEROUT ON;<br/>
+DECLARE<br/>
+  sql_text CLOB;<br/>
+BEGIN<br/>
+  FOR i IN (SELECT idx.owner, idx.index_name<br/>
+              FROM dba_indexes idx,<br/>
+                   dba_tables tbl<br/>
+             WHERE idx.owner = NVL(UPPER(TRIM('&&owner.')), idx.owner) -- optional schema owner name<br/>
+               AND idx.table_name = NVL(UPPER(TRIM('&&table_name.')), idx.table_name) -- optional table name<br/>
+               AND idx.index_name = NVL(UPPER(TRIM('&&index_name.')), idx.index_name) -- optional index name<br/>
+               AND idx.owner NOT IN &&exclusion_list. -- exclude non-application schemas<br/>
+               AND idx.owner NOT IN &&exclusion_list2. -- exclude more non-application schemas<br/>
+               AND idx.index_type IN ('NORMAL', 'FUNCTION-BASED NORMAL', 'BITMAP', 'NORMAL/REV') -- exclude domain and lob<br/>
+               AND idx.status != 'UNUSABLE' -- only valid indexes<br/>
+               AND idx.temporary = 'N'<br/>
+               AND tbl.owner = idx.table_owner<br/>
+               AND tbl.table_name = idx.table_name<br/>
+               AND tbl.last_analyzed IS NOT NULL -- only tables with statistics<br/>
+               AND tbl.num_rows > 0 -- only tables with rows as per statistics<br/>
+               AND tbl.blocks > 128 -- skip small tables<br/>
+               AND tbl.temporary = 'N')<br/>
+  LOOP<br/>
+    BEGIN<br/>
+      sql_text := 'EXPLAIN PLAN SET STATEMENT_ID = '''||:random1||''' FOR '||REPLACE(DBMS_METADATA.get_ddl('INDEX', i.index_name, i.owner), CHR(10), ' ');<br/>
+      -- cbo estimates index size based on explain plan for create index ddl<br/>
+      EXECUTE IMMEDIATE sql_text;<br/>
+      -- index owner and name do not fit on statement_id, thus using object_owner and object_name, using statement_id as processing state<br/>
+      DELETE plan_table WHERE statement_id = :random1 AND (other_xml IS NULL OR NVL(DBMS_LOB.instr(other_xml, 'index_size'), 0) = 0);<br/>
+      UPDATE plan_table SET object_owner = i.owner, object_name = i.index_name, statement_id = :random2 WHERE statement_id = :random1;<br/>
+    EXCEPTION<br/>
+      WHEN OTHERS THEN<br/>
+        DBMS_OUTPUT.PUT_LINE(i.owner||'.'||i.index_name||': '||SQLERRM);<br/>
+        DBMS_OUTPUT.PUT_LINE(DBMS_LOB.substr(sql_text));<br/>
+    END;<br/>
+  END LOOP;<br/>
+END;<br/>
+/<br/>
+SET SERVEROUT OFF;<br/>
+ <br/>
+WITH<br/>
+indexes AS (<br/>
+SELECT pt.object_owner,<br/>
+       pt.object_name,<br/>
+       TO_NUMBER(EXTRACTVALUE(VALUE(d), '/info')) estimated_bytes<br/>
+  FROM plan_table pt,<br/>
+       TABLE(XMLSEQUENCE(EXTRACT(XMLTYPE(pt.other_xml), '/*/info'))) d<br/>
+ WHERE pt.statement_id = :random2<br/>
+   AND pt.other_xml IS NOT NULL -- redundant<br/>
+   AND DBMS_LOB.instr(pt.other_xml, 'index_size') > 0 -- redundant<br/>
+   AND EXTRACTVALUE(VALUE(d), '/info/@type') = 'index_size' -- grab index_size type<br/>
+),<br/>
+segments AS (<br/>
+SELECT owner, segment_name, SUM(bytes) actual_bytes<br/>
+  FROM dba_segments<br/>
+ WHERE owner = NVL(UPPER(TRIM('&&owner.')), owner) -- optional schema owner name<br/>
+   AND segment_name = NVL(UPPER(TRIM('&&index_name.')), segment_name) -- optional index name<br/>
+   AND owner NOT IN &&exclusion_list. -- exclude non-application schemas<br/>
+   AND owner NOT IN &&exclusion_list2. -- exclude more non-application schemas<br/>
+   AND segment_type LIKE 'INDEX%'<br/>
+HAVING SUM(bytes) > POWER(2, 20) -- only indexes with actual size > 1 MB<br/>
+ GROUP BY<br/>
+       owner,<br/>
+       segment_name<br/>
+),<br/>
+list_bytes AS (<br/>
+SELECT (s.actual_bytes - i.estimated_bytes) actual_minus_estimated,<br/>
+       s.actual_bytes,<br/>
+       i.estimated_bytes,<br/>
+       i.object_owner,<br/>
+       i.object_name<br/>
+  FROM indexes i,<br/>
+       segments s<br/>
+ WHERE i.estimated_bytes > POWER(2, 20) -- only indexes with estimated size > 1 MB<br/>
+   AND s.owner = i.object_owner<br/>
+   AND s.segment_name = i.object_name<br/>
+)<br/>
+SELECT ROUND(actual_minus_estimated / POWER(2, 20)) actual_minus_estimated,<br/>
+       ROUND(actual_bytes / POWER(2, 20)) actual_mb,<br/>
+       ROUND(estimated_bytes / POWER(2, 20)) estimated_mb,<br/>
+       object_owner owner,<br/>
+       object_name index_name<br/>
+  FROM list_bytes<br/>
+ WHERE actual_minus_estimated > POWER(2, 20) -- only differences > 1 MB<br/>
+ ORDER BY<br/>
+       1 DESC,<br/>
+       object_owner,<br/>
+       object_name<br/>
+/<br/>
+<br/> 
+DELETE plan_table WHERE statement_id IN (:random1, :random2);<br/>
+UNDEF owner table_name index_name exclusion_list exclusion_list2;<br/>
+SPO OFF;<br/>
+<br/>
+
+<br/>
+https://carlos-sierra.net/2014/07/18/free-script-to-very-quickly-and-cheaply-estimate-the-size-of-an-index-if-it-were-to-be-rebuilt/<br/>
+<br/>
+
+<br/>
+<h3>Query para performance em prod - OTIS/MOBILE </h3><br/>
+<br/>
+
+<br/>
+select ss.sql_id,<br/>
+sn.END_INTERVAL_TIME,<br/>
+ss.executions_delta,<br/>
+ELAPSED_TIME_DELTA/(executions_delta*1000) "Elapsed Average ms",<br/>
+CPU_TIME_DELTA/(executions_delta*1000) "CPU Average ms",<br/>
+IOWAIT_DELTA/(executions_delta*1000) "IO Average ms",<br/>
+BUFFER_GETS_DELTA/executions_delta "Average buffer gets",<br/>
+DISK_READS_DELTA/executions_delta "Average disk reads"<br/>
+from DBA_HIST_SQLSTAT ss,DBA_HIST_SNAPSHOT sn<br/>
+where ss.sql_id = '7gnz0zx8070n9'<br/>
+and ss.snap_id=sn.snap_id<br/>
+and executions_delta > 0<br/>
+order by ss.snap_id,ss.sql_id;<br/>
+<br/>
+
+<br/>
+<h3>Query para BlackList - OTIS </h3>
+<br/>
+insert into log_report_adm.query_black_list<br/>
+(sql_hash_value,<br/>
+plan_hash_value,<br/>
+num_time_limit,<br/>
+dat_last_kill,<br/>
+num_kill_count)<br/>
+values<br/>
+(3112416966,<br/>
+-1,<br/>
+300,<br/>
+null,<br/>
+null);<br/>
+<br/>
+
+<h3>Query para Registrar MVIEW - Executar no master/origim </h3>
+select<br/>
+'EXEC DBMS_MVIEW.REGISTER_MVIEW (''' || MOWNER || ''',''' || MASTER || ''',''GLD1.SPRT4.UOL.COM.BR'',' || SNAPID || ',' || 32 || ',''SELECT * FROM ' || MOWNER || '.' || MASTER || '@PHO2.UOL.COM.BR'',DBMS_MVIEW.REG_UNKNOWN);'<br/>
+from sys.slog$ sl<br/>
+left join dba_registered_snapshots rs on rs.SNAPSHOT_ID = sl.SNAPID<br/>
+where mowner in ('SAFEPAY_ADM','MOBILE_ADM')<br/>
+and SNAPSHOT_SITE = 'GLD1.SPRT4.UOL.COM.BR'<br/>
+ORDER BY SNAPTIME DESC;<br/>
+<br/>
+
+<h3>-- Profile</h3><br/>
+SELECT DISTINCT dsp.name, dsp.signature, dsp.status,<br/>
+SQL.sql_id, SQL.parsing_schema_name, SQL.service, sess.machine,<br/>
+To_Char(SubStr(sql.sql_text,1,250))<br/>
+FROM DBA_SQL_PROFILES dsp,<br/>
+gv$sql SQL,<br/>
+/*gv$session*/ DBA_HIST_ACTIVE_SESS_HISTORY sess<br/>
+WHERE dsp.signature = SQL.exact_matching_signature<br/>
+AND SQL.sql_id = sess.sql_id--(+)<br/>
+AND SQL.inst_id = sess.instance_number--(+)<br/>
+ORDER BY sess.machine, SQL.service, SQL.parsing_schema_name<br/>
+<br/>
+<h3>-- Baseline</h3><br/>
+select DISTINCT dspb.sql_handle, dspb.plan_name, dspb.enabled, dspb.accepted, dspb.fixed, dspb.parsing_schema_name, SQL.service, SQL.parsing_schema_name,<br/>
+SQL.sql_id, sess.machine, To_Char(SubStr(sql.sql_text,1,250))<br/>
+from dba_sql_plan_baselines dspb,<br/>
+gv$sql SQL,<br/>
+/*gv$session*/ DBA_HIST_ACTIVE_SESS_HISTORY sess<br/>
+WHERE (dspb.signature = SQL.exact_matching_signature OR<br/>
+dspb.signature = SQL.force_matching_signature)<br/>
+AND SQL.sql_id = sess.sql_id--(+)<br/>
+AND SQL.inst_id = sess.instance_number<br/>
+ORDER BY machine<br/>
+<br/>
+
+<h3>-- Query Hist SQL BIND</h3><br/>
+select b.snap_id,<br/>
+b.sample_time,<br/>
+b.instance_number,<br/>
+b.session_id,<br/>
+b.session_serial#,<br/>
+b.program,<br/>
+b.machine,<br/>
+c.username,<br/>
+b.sql_id,<br/>
+b.sql_plan_hash_value,<br/>
+b.sql_exec_id,<br/>
+b.sql_exec_start,<br/>
+a.name,<br/>
+a.position,<br/>
+a.value_string,<br/>
+anydata.AccessTimestamp(a.value_anydata)as "VALUE_ANYDATA",<br/>
+a.last_captured,<br/>
+a.datatype,<br/>
+a.datatype_string<br/>
+from<br/>
+(select * from dba_hist_sqlbind where trunc(LAST_CAPTURED) = to_date('29/08/2016','DD/MM/YYYY') and sql_id = '0y9dbcgydppmh') a,<br/>
+(select * from dba_hist_active_sess_history where trunc(sample_time)= to_date('29/08/2016','DD/MM/YYYY') and sql_id = '0y9dbcgydppmh')b,<br/>
+dba_users c<br/>
+where a.snap_id = b.snap_id<br/>
+and a.instance_number = b.instance_number<br/>
+and a.dbid = b.dbid<br/>
+and b.user_id = c.user_id<br/>
+order by b.snap_id,b.sample_time,b.session_id,b.sql_exec_id,a.position;<br/>
+<br/>
+
+<br/>
+Mudança de plano de execução<br/>
+<br/>
+SELECT sql_id, sql_plan_hash_value,<br/>
+--max(text) text,<br/>
+round(AVG(elapsed_time) / 1000000, 2) AS avg_s, round(MAX(elapsed_time) / 1000000, 2) AS max_s, round(MIN(elapsed_time) / 1000000, 2) AS min_s, COUNT(*) total_qty, SUM(error_qty) error_qty, SUM(timeout_qty) timeout_qty, MIN(sql_exec_start) first_exec, MAX(sql_exec_start) last_exec<br/>
+FROM (SELECT username, s.sql_id, to_char(substr(t.sql_text, 1, 4000)) text, sql_plan_hash_value, s.elapsed_time, s.sql_exec_start, CASE<br/>
+WHEN error_message IS NOT NULL THEN<br/>
+1<br/>
+ELSE<br/>
+0<br/>
+END error_qty, CASE<br/>
+WHEN s.elapsed_time > 30000000 THEN<br/>
+1<br/>
+ELSE<br/>
+0<br/>
+END timeout_qty, error_message, dat_creation<br/>
+FROM monitor_adm.monitor_sql_bind s<br/>
+JOIN dba_hist_sqltext t<br/>
+ON t.sql_id = s.sql_id<br/>
+WHERE s.sql_id = &sqlid)<br/>
+GROUP BY sql_id, sql_plan_hash_value<br/>
+--ORDER BY COUNT(*) DESC<br/>
+ORDER BY last_exec;<br/>
+
+
+<br/>
+Quantidade de locks e o tipo , historico<br/>
+<br/>
+select trunc(sample_time, 'MI'),count (*),event<br/>
+from dba_hist_active_sess_history <br/>
+where sql_id = '3tvpj0wbqjygu'<br/>
+and trunc(sample_time) = to_date('21/10/2016','dd/mm/yyyy')<br/>
+and event is not null<br/>
+group by trunc(sample_time, 'MI'),event<br/>
+order by 1;<br/>
+<br/>
+
+<br/>
+Feedzai - a6-olina1 - Postgree - PgAdmin - Monitoração
+<br/>
+select max("timestamp") from fraud_prevention_adm."2b6267bd6e531078162918891f3501" limit 1;
+<br/>
+
+<br/>
+Querys de resource_manager
+<br/>
+SELECT PLAN,<br/>
+group_or_subplan,<br/>
+mgmt_p1,<br/>
+mgmt_p2,<br/>
+mgmt_p3,<br/>
+mgmt_p4,<br/>
+MAX_UTILIZATION_LIMIT,<br/>
+PARALLEL_DEGREE_LIMIT_P1<br/>
+FROM   dba_rsrc_plan_directives<br/>
+WHERE  plan = (select value<br/>
+from   v$parameter<br/>
+where  name = 'resource_manager_plan');<br/>
+<br/>
+SELECT DISTINCT <br/>
+se.sid sess_id, <br/>
+s.username,<br/>
+s.status,<br/>
+s.service_name,<br/>
+co.name consumer_group, <br/>
+se.state,<br/>
+se.active,<br/>
+se.consumed_cpu_time cpu_time, <br/>
+se.cpu_wait_time, <br/>
+se.queued_time,<br/>
+sw.event event_wait <br/>
+FROM v$rsrc_session_info se, <br/>
+v$rsrc_consumer_group co, <br/>
+v$session_wait sw, <br/>
+v$session s <br/>
+WHERE se.current_consumer_group_id = co.id <br/>
+and se.sid = s.sid <br/>
+and se.sid = sw.sid <br/>
+and co.name not in('_ORACLE_BACKGROUND_GROUP_') <br/>
+order by co.name, s.username; <br/>
+<br/>
+
+<br/>
+Query para problema feature_switch<br/>
+select * <br/>
+from safepay_feature_switch sfwu<br/>
+where  sfwu.idt_safepay_feature_switch in (?) and IND_STATUS='R' and FLG_USER_SWITCHABLE = 1;<br/>
+<br/>
+
+
+<br/>
+Querys de PGA (SWAP)
+<br/>
+select * from (<br/>
+select snap_id, round(sum(decode(name,'session pga memory', value))/power(1024,2),3) "session pga memory",<br/>
+                round(sum(decode(name,'session uga memory', value))/power(1024,2),3) "session uga memory"<br/>
+from STATS$SYSSTAT <br/>
+where name like 'session _ga memory'<br/>
+  and snap_id>=9800<br/>
+group by snap_id)<br/>
+where "session uga memory">"session pga memory"<br/>
+order by snap_id;<br/>
+
+<br/>
+
+SELECT to_char(ssn.sid, '9999') || ' - ' || nvl(ssn.username, nvl(bgp.name, 'background')) ||<br/>
+nvl(lower(ssn.machine), ins.host_name) "SESSION",<br/>
+to_char(prc.spid, '999999999') "PID/THREAD",<br/>
+to_char((se1.value/1024)/1024, '999G999G990D00') || ' MB' " CURRENT SIZE",<br/>
+to_char((se2.value/1024)/1024, '999G999G990D00') || ' MB' " MAXIMUM SIZE"<br/>
+FROM v$sesstat se1, v$sesstat se2, v$session ssn, v$bgprocess bgp, v$process prc,<br/>
+v$instance ins, v$statname stat1, v$statname stat2<br/>
+WHERE se1.statistic# = stat1.statistic# and stat1.name = 'session pga memory'<br/>
+AND se2.statistic# = stat2.statistic# and stat2.name = 'session pga memory max'<br/>
+AND se1.sid = ssn.sid<br/>
+AND se2.sid = ssn.sid<br/>
+AND ssn.paddr = bgp.paddr (+)<br/>
+AND ssn.paddr = prc.addr (+);<br/>
+<br/>
+
+<br/>
+<h3>Definição de PCI e PII</h3>
+<br/>
+PII - (Personally Identifiable Information) : Informações de identificação pessoal, referem-se a informações que podem ser usadas para identificar, contatar ou localizar uma única pessoa.
+<br/>
+CPF / CNPJ<br/>
+E-mail<br/>
+Telefones (todos)<br/>
+Cartão Crédito<br/>
+Conta Corrente<br/>
+Nome da Mãe<br/>
+Frase de segurança<br/>
+Senha<br/>
+Endereço (complemento etc.)<br/>
+PCI são as informações de cartão.<br/>
+O resto, é PII. :slightly_smiling_face:<br/>
+<br/>
+<h3>longops</h3>
+<br/>
+SELECT s.sid,<br/>
+s.serial#,<br/>
+s.machine,<br/>
+ROUND(sl.elapsed_seconds/60) || ':' || MOD(sl.elapsed_seconds,60) elapsed,<br/>
+ROUND(sl.time_remaining/60) || ':' || MOD(sl.time_remaining,60) remaining,<br/>
+ROUND(sl.sofar/sl.totalwork*100, 2) progress_pct<br/>
+FROM   v$session s,<br/>
+v$session_longops sl<br/>
+WHERE  s.sid     = sl.sid<br/>
+AND    s.serial# = sl.serial#<br/>
+and ROUND(sl.sofar/sl.totalwork*100, 2) < 100;<br/>
+
+<br/>
+<h3>Sizing Oracle</h3>
+<br/>
+SELECT e.owner<br/>
+, e.segment_name<br/>
+, ROUND(sum(e.bytes)/1024/1024,2) "SIZE (MB)" <br/>
+, ROUND(sum(e.bytes)/1024/1024/1024,2) "SIZE (GB)" <br/>
+FROM dba_extents e <br/>
+where e.owner = 'SAFEPAY_ADM' <br/>
+and E.SEGMENT_NAME = 'TRANSACTION_PAYMENT_ATTEMPT' <br/>
+GROUP BY e.owner<br/>
+, e.segment_name <br/>
+;<br/>
+
+select a.owner,a.table_name,a.num_rows,<br/>
+a.last_analyzed period_start_analyze,<br/>
+sysdate         period_end_analyze,<br/>
+ROUND(b.INSERTS / TRUNC(sysdate - (a.last_analyzed - 1)),2) AVG_INSERT_DAY,<br/>
+ROUND(b.UPDATES / TRUNC(sysdate - (a.last_analyzed - 1)),2) AVG_UPDATE_DAY,<br/>
+ROUND(b.DELETES / TRUNC(sysdate - (a.last_analyzed - 1)),2) AVG_DELETE_DAY<br/>
+from all_tables a<br/>
+join dba_tab_modifications b  on a.owner = b.table_owner and a.table_name = b.table_name<br/>
+where a.owner = 'SAFEPAY_ADM' and<br/>
+a.table_name = 'TRANSACTION_PAYMENT_ATTEMPT' ;<br/>
+
+<br/>
+<h3>Views DreamFactory</h3>
+<br/>
+select *<br/>
+from DBA_TAB_PRIVS<br/>
+where grantee = 'SHIELDUBR'<br/>
+;<br/>
+<br/>
+SELECT *<br/>
+FROM DBA_VIEWS<br/>
+;<br/>
+<br/>
+SELECT *<br/>
+FROM DBA_SOURCE<br/>
+WHERE OWNER = 'SAFEPAY_ADM'<br/>
+AND NAME =  'P_INSERT_MOBIUSERPROMO_BC'<br/>
+;<br/>
+<br/>
+
+<br/>
+<h3>Buscar SQL_ID</h3>
+<br/>
+select *<br/>
+from v$session<br/>
+where username = 'SMOREIRA';<br/>
+<br/>
+select sql_text<br/>
+,sql_id<br/>
+from v$sql<br/>
+where sql_text like '%AND prh.dat_history_creation >=%';<br/>
+
+<br/>
+<h3>MVIEWS</h3>
+<br/>
+-- Rodar na Otis<br/>
+select * from dba_mview_logs where lower(master) = 'fidc_authorization';<br/>
+<br/>
+<br/> 
+ -- Rodar na Okane<br/>
+select * from dba_refresh_children<br/>
+where owner = 'SAFEPAY_ADM'<br/>
+and name = 'PAYMENT_RELEASE_LIQUIDATION';<br/>
+
+<h3>Partição</h3>
+<br/>
+select * from table partition(nome_particao);<br/>
+<br/>
+SELECT OWNER, TABLE_NAME, SEQUENCE_NAME, IDENTITY_OPTIONS<br/>
+FROM dba_TAB_IDENTITY_COLS<br/>
+ WHERE table_name IN ('CONTRACTUAL_EFFECTS_EVENT','CONTRACTUAL_EFFECTS_EVENT_JSON');<br/>
+<br/>
+ SELECT  table_name, <br/>
+        partitioning_type,<br/> 
+        partition_count, <br/>
+        interval <br/>
+  FROM  DBA_PART_TABLES<br/>
+ WHERE  table_name IN ('CONTRACTUAL_EFFECTS_EVENT','CONTRACTUAL_EFFECTS_EVENT_JSON');<br/>
+<br/>
+ select table_name,<br/>
+       partition_name,<br/>
+       num_rows,<br/>
+       high_value,<br/>
+       tablespace_name <br/>
+  from dba_tab_partitions<br/>
+ where table_name IN ('CONTRACTUAL_EFFECTS_EVENT','CONTRACTUAL_EFFECTS_EVENT_JSON');<br/>
+ <br/>
+ select index_name,<br/>
+  partition_name,<br/>
+  num_rows,<br/>
+  high_value,<br/>
+  tablespace_name<br/>
+  from dba_ind_partitions<br/>
+  where index_name ='DAT_PART_IDX01';<br/>
+
+	<h2>POSTGRES</h2>
+
+<h3>psql - Postgres</h3>
+psql -h 'HOST' -U 'USUARIO' -d 'BANCO' -p 5432 -f 'CAMINHO_DO_ARQUIVO'<br/>
+<br/>
+<h3>Sizing Oracle</h3>
+<br/>
+select nspname,relname,pg_size_pretty(pg_relation_size(c.oid)) as "size"<br/>
+from pg_class c<br/>
+left join pg_namespace n <br/>
+on n.oid = c.relnamespace<br/>
+where relname like '%transaction_installment%'<br/>
+and relname not like '%history%';<br/>
+
+<h3>verifcar tamanho da partição</h3>
+with recursive inh as (<br/>
+   select i.inhrelid, null::text as parent<br/>
+   from pg_catalog.pg_inherits i
+     join pg_catalog.pg_class cl on i.inhparent = cl.oid<br/>
+     join pg_catalog.pg_namespace nsp on cl.relnamespace = nsp.oid<br/>
+   where nsp.nspname = 'fraud_prevention_adm' <br/>  
+   union all<br/>
+   select i.inhrelid, (i.inhparent::regclass)::text<br/>
+   from inh<br/>
+   join pg_catalog.pg_inherits i on (inh.inhrelid = i.inhparent)<br/>
+)<br/>
+select c.relname as partition_name,<br/>
+        n.nspname as partition_schema,<br/>
+        pg_get_expr(c.relpartbound, c.oid, true) as partition_expression,<br/>
+        pg_get_expr(p.partexprs, c.oid, true) as sub_partition,<br/>
+        parent,<br/>
+        case p.partstrat<br/>
+          when 'l' then 'LIST'<br/>
+          when 'r' then 'RANGE'<br/>
+        end as sub_partition_strategy<br/>
+from inh<br/>
+   join pg_catalog.pg_class c on inh.inhrelid = c.oid<br/>
+   join pg_catalog.pg_namespace n on c.relnamespace = n.oid<br/>
+   left join pg_partitioned_table p on p.partrelid = c.oid<br/>
+order by n.nspname, c.relname;<br/>
+
+	<h2>MYSQL</h2>
+
+<br/>
+<h3>export com command line</h3>
+<br/>
+tee 'lugar do log'
+<br/>
+
+</html>

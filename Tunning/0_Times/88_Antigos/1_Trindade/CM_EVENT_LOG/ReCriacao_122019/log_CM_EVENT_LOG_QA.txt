@@ -1,0 +1,446 @@
+SQL> set timing on
+SQL> set serveroutput on
+SQL> 
+SQL> -- Log de execução - início:
+SQL> begin
+  2      dbms_output.put_line('Início: ' || to_char(sysdate, 'dd/mm/yyyy hh24:mi:ss')
+  3                        || ' - ' || sys_context('userenv','instance_name')
+  4                        || ' @ ' || sys_context('userenv','server_host'));
+  5  end;
+  6  /
+Início: 29/11/2019 15:36:39 - pho22 @ a1-otisf-q-pla7
+
+
+Procedimento PL/SQL concluído com sucesso.
+
+Decorrido: 00:00:00.017
+SQL> 
+SQL> --+---------------------------------------------------------+--
+SQL> -- 1. Criar a tabela CM_EVENT_LOG_NEW
+SQL> --+---------------------------------------------------------+--
+SQL> 
+SQL> create table SAFEPAY_ADM.CM_EVENT_LOG_NEW
+  2  (
+  3    IDT_CM_EVENT_LOG      number(20) not null constraint CMEVENLOGNEW_PK primary key
+  4                                              using index tablespace TSICMEVENTLOG02_2 pctfree 15 initrans 100,
+  5    IDT_TRANSACTION       number(10) not null,
+  6    COD_EVENT_CORRELATION varchar2(124), 
+  7    IND_EVENT_TYPE        number(1)  not null constraint CMEVENLOGNEW_INDEVENTYPE_CK check (IND_EVENT_TYPE in (1,2,3,4,5,6)),
+  8    DAT_CREATION          timestamp(6) default systimestamp not null,
+  9    JSON_EVENT_PAYLOAD    clob,
+ 10    constraint CMEVENLOGNEW_UK01
+ 11    unique
+ 12    ( COD_EVENT_CORRELATION,
+ 13      IND_EVENT_TYPE 
+ 14    )
+ 15    using index tablespace TSICMEVENTLOG02_2 pctfree 10 initrans 100
+ 16  )
+ 17  lob (JSON_EVENT_PAYLOAD) store as basicfile
+ 18  ( tablespace TSDCMEVENTLOG02_2 enable storage in row chunk 8192 retention )
+ 19  tablespace TSDCMEVENTLOG02_2
+ 20  pctfree 10
+ 21  initrans 32;
+
+Table SAFEPAY_ADM.CM_EVENT_LOG_NEW criado.
+
+Decorrido: 00:00:00.697
+SQL> 
+SQL> comment on table SAFEPAY_ADM.CM_EVENT_LOG_NEW
+  2  is 'Historico de troca de mensagens CAYMAN x SAFEPAYUBR. Transacoes com saldo liberado atraves do CAYMAN';
+
+Comment criado.
+
+Decorrido: 00:00:00.043
+SQL> 
+SQL> comment on column SAFEPAY_ADM.CM_EVENT_LOG_NEW.IDT_CM_EVENT_LOG      is 'Identificador da tabela - SEQUENCE: SQ_CMEVENHIST_IDT';
+
+Comment criado.
+
+Decorrido: 00:00:00.009
+SQL> comment on column SAFEPAY_ADM.CM_EVENT_LOG_NEW.IDT_TRANSACTION       is 'Identificador da transação, sem necessidade de manter a chave de referência com tabela TRANSACTION';
+
+Comment criado.
+
+Decorrido: 00:00:00.008
+SQL> comment on column SAFEPAY_ADM.CM_EVENT_LOG_NEW.COD_EVENT_CORRELATION is 'Identificador do evento pra correlacionar as mensagens';
+
+Comment criado.
+
+Decorrido: 00:00:00.008
+SQL> comment on column SAFEPAY_ADM.CM_EVENT_LOG_NEW.IND_EVENT_TYPE        is '(1) Request Sent
+  2  (2) Request Received
+  3  (3) Response Sent
+  4  (4) Response Received
+  5  (5) Confirmation Sent
+  6  (6) Confirmation Received';
+
+Comment criado.
+
+Decorrido: 00:00:00.009
+SQL> comment on column SAFEPAY_ADM.CM_EVENT_LOG_NEW.DAT_CREATION          is 'Data de criação do registro';
+
+Comment criado.
+
+Decorrido: 00:00:00.008
+SQL> comment on column SAFEPAY_ADM.CM_EVENT_LOG_NEW.JSON_EVENT_PAYLOAD    is 'Salva mensagens do pagseguro para o cayman.';
+
+Comment criado.
+
+Decorrido: 00:00:00.013
+SQL> 
+SQL> 
+SQL> --+---------------------------------------------------------+--
+SQL> -- 2. Renomear a tabela CM_EVENT_LOG_NEW para CM_EVENT_LOG
+SQL> --+---------------------------------------------------------+--
+SQL> 
+SQL> alter table SAFEPAY_ADM.CM_EVENT_LOG     rename to CM_EVENT_LOG_OLD;
+
+Table SAFEPAY_ADM.CM_EVENT_LOG alterado.
+
+Decorrido: 00:00:00.219
+SQL> 
+SQL> alter table SAFEPAY_ADM.CM_EVENT_LOG_NEW rename to CM_EVENT_LOG;
+
+Table SAFEPAY_ADM.CM_EVENT_LOG_NEW alterado.
+
+Decorrido: 00:00:00.023
+SQL> 
+SQL> --+---------------------------------------------------------+--
+SQL> -- 3. Grants da nova tabela CM_EVENT_LOG ("new" já renomeada)
+SQL> --+---------------------------------------------------------+--
+SQL> 
+SQL> grant select on SAFEPAY_ADM.CM_EVENT_LOG to KAFKAEXCHEQUER;
+
+Grant bem-sucedido.
+
+Decorrido: 00:00:00.098
+SQL> grant select on SAFEPAY_ADM.CM_EVENT_LOG to MANUT_CASCAIS_DR;
+Erro a partir da linha : 74 no comando -
+grant select on SAFEPAY_ADM.CM_EVENT_LOG to MANUT_CASCAIS_DR
+Relatório de erros -
+ORA-01917: o usuário ou a atribuição 'MANUT_CASCAIS_DR' não existe
+01917. 00000 -  "user or role '%s' does not exist"
+*Cause:    There is not a user or role by that name.
+*Action:   Re-specify the name.
+Decorrido: 00:00:00.039
+SQL> grant select on SAFEPAY_ADM.CM_EVENT_LOG to MANUT_BI_PAGSEGURO;
+
+Grant bem-sucedido.
+
+Decorrido: 00:00:00.023
+SQL> grant select on SAFEPAY_ADM.CM_EVENT_LOG to MANUT_SAFEPAY;
+
+Grant bem-sucedido.
+
+Decorrido: 00:00:00.016
+SQL> grant select on SAFEPAY_ADM.CM_EVENT_LOG to RL_MANUT_SAFEPAY;
+
+Grant bem-sucedido.
+
+Decorrido: 00:00:00.024
+SQL> grant select on SAFEPAY_ADM.CM_EVENT_LOG to SAFEPAY_ADMINUBR;
+
+Grant bem-sucedido.
+
+Decorrido: 00:00:00.009
+SQL> grant select on SAFEPAY_ADM.CM_EVENT_LOG to SAFEPAY_BODIUBR;
+
+Grant bem-sucedido.
+
+Decorrido: 00:00:00.010
+SQL> grant select on SAFEPAY_ADM.CM_EVENT_LOG to SAFEPAY_QUERYUBR;
+
+Grant bem-sucedido.
+
+Decorrido: 00:00:00.013
+SQL> 
+SQL> grant select, insert, update         on SAFEPAY_ADM.CM_EVENT_LOG to CAYMAN_BALANCE_BLOCKERUBR;
+
+Grant bem-sucedido.
+
+Decorrido: 00:00:00.021
+SQL> grant select, insert, update, delete on SAFEPAY_ADM.CM_EVENT_LOG to CAYMANUBR;
+
+Grant bem-sucedido.
+
+Decorrido: 00:00:00.010
+SQL> grant select, insert, update, delete on SAFEPAY_ADM.CM_EVENT_LOG to SAFEPAYUBR;
+
+Grant bem-sucedido.
+
+Decorrido: 00:00:00.012
+SQL> 
+SQL> 
+SQL> --+---------------------------------------------------------+--
+SQL> -- 4. Tombamento dos dados da tabela CM_EVENT_LOG_OLD para a nova CM_EVENT_LOG
+SQL> --+---------------------------------------------------------+--
+SQL> 
+SQL> alter session set PARALLEL_FORCE_LOCAL = true;
+
+Session alterado.
+
+Decorrido: 00:00:00.013
+SQL> 
+SQL> exec dbms_output.put_line('Horário: ' || to_char(sysdate, 'dd/mm/yyyy hh24:mi:ss'));
+Horário: 29/11/2019 15:36:40
+
+
+Procedimento PL/SQL concluído com sucesso.
+
+Decorrido: 00:00:00.014
+SQL> 
+SQL> insert /*+ append */
+  2  into SAFEPAY_ADM.CM_EVENT_LOG
+  3  (
+  4     COD_EVENT_CORRELATION,
+  5     DAT_CREATION,
+  6     IDT_CM_EVENT_LOG,
+  7     IDT_TRANSACTION,
+  8     IND_EVENT_TYPE,
+  9     JSON_EVENT_PAYLOAD
+ 10  )
+ 11  select /*+ parallel(16) */
+ 12     o1.COD_EVENT_CORRELATION,
+ 13     o1.DAT_CREATION,
+ 14     o1.IDT_CM_EVENT_LOG,
+ 15     o1.IDT_TRANSACTION,
+ 16     o1.IND_EVENT_TYPE,
+ 17     o1.JSON_EVENT_PAYLOAD
+ 18  from
+ 19      SAFEPAY_ADM.CM_EVENT_LOG_OLD o1
+ 20  where o1.DAT_CREATION >= cast(sysdate-4/24 as timestamp);
+
+793 linhas inserido.
+
+Decorrido: 00:00:00.758
+SQL> 
+SQL> commit;
+Commit concluído.
+Decorrido: 00:00:00.010
+SQL> 
+SQL> 
+SQL> --+---------------------------------------------------------+--
+SQL> -- 5. Criar demais índices da tabela nova, após a carga inicial.
+SQL> --+---------------------------------------------------------+--
+SQL> 
+SQL> exec dbms_output.put_line('Horário: ' || to_char(sysdate, 'dd/mm/yyyy hh24:mi:ss'));
+Horário: 29/11/2019 15:36:41
+
+
+Procedimento PL/SQL concluído com sucesso.
+
+Decorrido: 00:00:00.010
+SQL> 
+SQL> -- Não necessitam de claúsula "online", pois a PHO estará em "modo restrito".
+SQL> 
+SQL> create index SAFEPAY_ADM.CMEVENLOGNEW_IDX01
+  2  on SAFEPAY_ADM.CM_EVENT_LOG (IDT_TRANSACTION)
+  3  tablespace TSICMEVENTLOG02_2 
+  4  pctfree 10 
+  5  initrans 100
+  6  parallel 16;
+
+Index SAFEPAY_ADM.CMEVENLOGNEW_IDX01 criado.
+
+Decorrido: 00:00:02.933
+SQL> 
+SQL> alter index SAFEPAY_ADM.CMEVENLOGNEW_IDX01 noparallel;
+
+Index SAFEPAY_ADM.CMEVENLOGNEW_IDX01 alterado.
+
+Decorrido: 00:00:00.054
+SQL> 
+SQL> create index SAFEPAY_ADM.CMEVENLOGNEW_IDX02
+  2  on SAFEPAY_ADM.CM_EVENT_LOG (DAT_CREATION, IND_EVENT_TYPE) 
+  3  tablespace TSICMEVENTLOG02_2 
+  4  pctfree 20 
+  5  initrans 100
+  6  parallel 16;
+
+Index SAFEPAY_ADM.CMEVENLOGNEW_IDX02 criado.
+
+Decorrido: 00:00:00.534
+SQL> 
+SQL> alter index SAFEPAY_ADM.CMEVENLOGNEW_IDX02 noparallel;
+
+Index SAFEPAY_ADM.CMEVENLOGNEW_IDX02 alterado.
+
+Decorrido: 00:00:00.010
+SQL> 
+SQL> 
+SQL> --+---------------------------------------------------------+--
+SQL> -- 6. Ajustar nome das constraints e índices das versões OLD e NEW.
+SQL> --+---------------------------------------------------------+--
+SQL> 
+SQL> -- Constraints da tabela antiga (agora "OLD")
+SQL> alter table SAFEPAY_ADM.CM_EVENT_LOG_OLD rename constraint CMEVENLOGNEW12_PK             to CMEVENLOGOLD_PK;
+
+Table SAFEPAY_ADM.CM_EVENT_LOG_OLD alterado.
+
+Decorrido: 00:00:00.065
+SQL> alter table SAFEPAY_ADM.CM_EVENT_LOG_OLD rename constraint CMEVENLOGNEW12_UK01           to CMEVENLOGOLD_UK01;
+
+Table SAFEPAY_ADM.CM_EVENT_LOG_OLD alterado.
+
+Decorrido: 00:00:00.015
+SQL> alter table SAFEPAY_ADM.CM_EVENT_LOG_OLD rename constraint CMEVENLOGNEW12_INDEVENTYPE_CK to CMEVENLOGOLD_INDEVENTYPE_CK;
+
+Table SAFEPAY_ADM.CM_EVENT_LOG_OLD alterado.
+
+Decorrido: 00:00:00.015
+SQL> 
+SQL> -- Índices da tabela antiga (agora "OLD")
+SQL> alter index SAFEPAY_ADM.CMEVENLOGNEW12_PK    rename to CMEVENLOGOLD_PK;
+
+Index SAFEPAY_ADM.CMEVENLOGNEW12_PK alterado.
+
+Decorrido: 00:00:00.085
+SQL> alter index SAFEPAY_ADM.CMEVENLOGNEW12_UK01  rename to CMEVENLOGOLD_UK01;
+
+Index SAFEPAY_ADM.CMEVENLOGNEW12_UK01 alterado.
+
+Decorrido: 00:00:00.013
+SQL> alter index SAFEPAY_ADM.CMEVENLOGNEW12_IDX01 rename to CMEVENLOGOLD_IDX01;
+
+Index SAFEPAY_ADM.CMEVENLOGNEW12_IDX01 alterado.
+
+Decorrido: 00:00:00.015
+SQL> alter index SAFEPAY_ADM.CMEVENLOGNEW12_IDX02 rename to CMEVENLOGOLD_IDX02;
+
+Index SAFEPAY_ADM.CMEVENLOGNEW12_IDX02 alterado.
+
+Decorrido: 00:00:00.012
+SQL> 
+SQL> -- Constraints da tabela nova (era "NEW")
+SQL> alter table SAFEPAY_ADM.CM_EVENT_LOG rename constraint CMEVENLOGNEW_PK             to CMEVENLOG_PK;
+
+Table SAFEPAY_ADM.CM_EVENT_LOG alterado.
+
+Decorrido: 00:00:00.019
+SQL> alter table SAFEPAY_ADM.CM_EVENT_LOG rename constraint CMEVENLOGNEW_UK01           to CMEVENLOG_UK01;
+
+Table SAFEPAY_ADM.CM_EVENT_LOG alterado.
+
+Decorrido: 00:00:00.016
+SQL> alter table SAFEPAY_ADM.CM_EVENT_LOG rename constraint CMEVENLOGNEW_INDEVENTYPE_CK to CMEVENLOG_INDEVENTYPE_CK;
+
+Table SAFEPAY_ADM.CM_EVENT_LOG alterado.
+
+Decorrido: 00:00:00.017
+SQL> 
+SQL> -- Índices da tabela nova (era "NEW")
+SQL> alter index SAFEPAY_ADM.CMEVENLOGNEW_PK    rename to CMEVENLOG_PK;
+
+Index SAFEPAY_ADM.CMEVENLOGNEW_PK alterado.
+
+Decorrido: 00:00:00.017
+SQL> alter index SAFEPAY_ADM.CMEVENLOGNEW_UK01  rename to CMEVENLOG_UK01;
+
+Index SAFEPAY_ADM.CMEVENLOGNEW_UK01 alterado.
+
+Decorrido: 00:00:00.013
+SQL> alter index SAFEPAY_ADM.CMEVENLOGNEW_IDX01 rename to CMEVENLOG_IDX01;
+
+Index SAFEPAY_ADM.CMEVENLOGNEW_IDX01 alterado.
+
+Decorrido: 00:00:00.014
+SQL> alter index SAFEPAY_ADM.CMEVENLOGNEW_IDX02 rename to CMEVENLOG_IDX02;
+
+Index SAFEPAY_ADM.CMEVENLOGNEW_IDX02 alterado.
+
+Decorrido: 00:00:00.014
+SQL> 
+SQL> -- Recria sinônimo público (apenas para revalidar)
+SQL> create or replace public synonym CM_EVENT_LOG for SAFEPAY_ADM.CM_EVENT_LOG;
+
+Synonym CM_EVENT_LOG criado.
+
+Decorrido: 00:00:00.261
+SQL> 
+SQL> 
+SQL> --+---------------------------------------------------------+--
+SQL> -- 7. Coletar de estatísticas.
+SQL> --+---------------------------------------------------------+--
+SQL> 
+SQL> exec dbms_output.put_line('Horário: ' || to_char(sysdate, 'dd/mm/yyyy hh24:mi:ss'));
+Horário: 29/11/2019 15:36:45
+
+
+Procedimento PL/SQL concluído com sucesso.
+
+Decorrido: 00:00:00.010
+SQL> 
+SQL> begin
+  2     DBMS_STATS.GATHER_TABLE_STATS
+  3     ( ownname => 'SAFEPAY_ADM',
+  4       tabname => 'CM_EVENT_LOG',
+  5       cascade => true,
+  6       degree  => 16
+  7     );
+  8  end;
+  9  /
+
+Procedimento PL/SQL concluído com sucesso.
+
+Decorrido: 00:00:05.501
+SQL> 
+SQL> -- Log de execução - final:
+SQL> begin
+  2      dbms_output.put_line('Final: ' || to_char(sysdate, 'dd/mm/yyyy hh24:mi:ss'));
+  3  end;
+  4  /
+Final: 29/11/2019 15:36:51
+
+
+Procedimento PL/SQL concluído com sucesso.
+
+Decorrido: 00:00:00.009
+SQL> 
+SQL> 
+SQL> /*
+SQL>----------------------------------------
+SQL>-- Verificações:
+SQL>----------------------------------------
+SQL>
+SQL>col count(*) format 999g999g999g999
+SQL>--
+SQL>-- Tabela nova:
+SQL>select count(*), min(DAT_CREATION), max(DAT_CREATION)
+SQL>from CM_EVENT_LOG;
+SQL>
+SQL>-- Tabela antiga (agora "OLD")
+SQL>select count(*), min(DAT_CREATION), max(DAT_CREATION)
+SQL>from SAFEPAY_ADM.CM_EVENT_LOG
+SQL>where DAT_CREATION >= cast(sysdate-4/24 as timestamp);
+SQL>
+SQL>select * from dba_synonyms where synonym_name like 'CM_EVENT_LOG%' order by synonym_name;
+SQL>
+SQL>select owner, object_name, object_type, status, created, last_ddl_time, timestamp
+SQL>from dba_objects
+SQL>where (object_name like 'CM_EVENT_LOG%' or object_name like 'CMEVENLOG%')
+SQL>order by created, object_name, object_type;
+SQL>
+SQL>select * from dba_tables where table_name like 'CM_EVENT_LOG%' order by table_name;
+SQL>
+SQL>select * from dba_constraints
+SQL>where table_name like 'CM_EVENT_LOG%'
+SQL>order by last_change, constraint_name;
+SQL>
+SQL>select * from dba_indexes
+SQL>where table_name like 'CM_EVENT_LOG%'
+SQL>order by owner, table_name, index_name;
+SQL>
+SQL>select * from dba_tab_privs
+SQL>where table_name like 'CM_EVENT_LOG%'
+SQL>order by owner, table_name, grantee, privilege;
+SQL>
+SQL>select grantee, owner, privilege, grantable, hierarchy from dba_tab_privs where table_name = 'CM_EVENT_LOG'
+SQL>minus
+SQL>select grantee, owner, privilege, grantable, hierarchy from dba_tab_privs where table_name = 'CM_EVENT_LOG_OLD';
+SQL>
+SQL>select grantee, owner, privilege, grantable, hierarchy from dba_tab_privs where table_name = 'CM_EVENT_LOG_OLD'
+SQL>minus
+SQL>select grantee, owner, privilege, grantable, hierarchy from dba_tab_privs where table_name = 'CM_EVENT_LOG';
+SQL>
+SQL>--
+SQL>*/

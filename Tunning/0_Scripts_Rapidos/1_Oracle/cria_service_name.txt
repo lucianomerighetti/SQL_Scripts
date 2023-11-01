@@ -1,0 +1,3 @@
+-- criação de service names, executar diretamente no servidor
+
+$ srvctl add service -d cdm1gt -pdb PDBRECEIVABLES -s KAFKA_PDBRECEIVABLES -preferred cdm1gt2 -available cdm1gt1

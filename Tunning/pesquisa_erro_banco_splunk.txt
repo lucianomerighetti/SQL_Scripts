@@ -1,0 +1,28 @@
+index="psp_receivable" sourcetype="financeiro-prod_receivable-unit" "ORA-" NOT ("ORA-01400" OR "ORA-00001" OR "ORA-02391" OR "00060" OR "ORA-01795" OR "closed" OR "00028")
+
+
+index="psp_receivable" sourcetype="financeiro-prod_settlement-contract"  "ORA-" NOT ("ORA-01400" OR "ORA-00001" OR "ORA-02391" OR "00060" OR "ORA-01795" OR "closed" OR "00028")
+
+
+index="kubernetes" source=*debt-schedule* "ORA-" NOT ("ORA-01400" OR "ORA-00001" OR "ORA-02391" OR "00060" OR "ORA-01795" OR "closed" OR "00028")
+
+
+index="kubernetes" sourcetype="kube:container:external-acquirer-ru-schedule-api" "ORA-" NOT ("ORA-01400" OR "ORA-00001" OR "ORA-02391" OR "00060" OR "ORA-01795" OR "closed" OR "00028")
+
+
+index="kubernetes" sourcetype="kube:container:registradora-customer-replication" "ORA-" NOT ("ORA-01400" OR "ORA-00001" OR "ORA-02391" OR "00060" OR "ORA-01795" OR "closed" OR "00028")
+
+
+index="psp_receivable" sourcetype="financeiro-prod_receivable-unit-integration-consumer" "ORA-" NOT ("ORA-01400" OR "ORA-00001" OR "ORA-02391" OR "00060" OR "ORA-01795" OR "closed" OR "00028")
+
+
+index="psp_receivable" sourcetype="financeiro-prod_cout-pre-settlement" "ORA-" NOT ("ORA-01400" OR "ORA-00001" OR "ORA-02391" OR "00060" OR "ORA-01795" OR "closed" OR "00028")
+
+
+
+
+
+
+index=mesos source=*bkofin_bkofin-kafka-connect* error ORA prod-outbox-receivable-unit-changed-v44
+
+index=mesos source=*bkofin_bkofin-kafka-connect* error ORA prod-outbox-suspension-changed-v8

@@ -1,0 +1,4 @@
+-- logar no servidor e não no cqlsh
+nodetool cfstats keyspace_name.table_name
+
+-- detalhes do retorno do comando: https://docs.datastax.com/en/cassandra-oss/2.1/cassandra/tools/toolsCFstats.html

@@ -1,0 +1,2 @@
+ALTER TABLE AD.FEE add CUSTOMER_TYPE VARCHAR(20) NOT NULL;
+COMMENT ON COLUMN AD.FEE.CUSTOMER_TYPE IS 'Tipo do usuario do qual a taxa foi cobrada, pode ser BUYER ou SELLER';

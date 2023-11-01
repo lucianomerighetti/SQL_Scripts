@@ -1,0 +1,1 @@
+ALTER TABLE <table> ADD INDEX <idx_name> (column), ALGORITHM=INPLACE, LOCK=NONE

@@ -1,0 +1,131 @@
+{
+  "fields": [
+    {
+      "doc": "[PK][NOT_SECURITY_APPLY] IDENTIFICADOR DA ANTECIPACAO",
+      "name": "idt_anticipation",
+      "type": "long"
+    },
+    {
+      "doc": "[NOT_SECURITY_APPLY] IDENTIFICADOR DO USUÁRIO VENDEDOR DO PAGSEGURO",
+      "name": "idt_safepay_user",
+      "type": "long"
+    },
+    {
+      "doc": "[NOT_SECURITY_APPLY] INDICADOR DO TIPO DE CONTA.EX.: NETWORK e CLIENT",
+      "name": "ind_account_type",
+      "type": "string"
+    },
+    {
+      "doc": "[NOT_SECURITY_APPLY] INDICADOR DA ORIGEM DA ANTECIPACAO.EX.: SELF_SERVICE, DESK, FIDC e SELF_SERVICE_MOBILE",
+      "name": "ind_anticipation_origin",
+      "type": "string"
+    },
+    {
+      "default": null,
+      "doc": "[NOT_SECURITY_APPLY] IDENTIFICADOR DAS INFORMACOES DA ANTECIPACAO",
+      "name": "idt_anticipation_info",
+      "type": [
+        "null",
+        "long"
+      ]
+    },
+    {
+      "default": null,
+      "doc": "[NOT_SECURITY_APPLY] IDENTIFICADOR DA ANTECIPACAO NO MONOLITO",
+      "name": "idt_advanceable_receivable",
+      "type": [
+        "null",
+        "long"
+      ]
+    },
+    {
+      "doc": "[NOT_SECURITY_APPLY] NUMERO DE VERSAO",
+      "name": "num_version",
+      "type": "long"
+    },
+    {
+      "default": null,
+      "doc": "[NOT_SECURITY_APPLY] DATA DE CRIACAO",
+      "name": "dat_creation",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "default": null,
+      "doc": "[NOT_SECURITY_APPLY] DATA DE ATUALIZACAO",
+      "name": "dat_update",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "default": null,
+      "doc": "[NOT_SECURITY_APPLY] STATUS DA ANTECIPACAO.EX.: PROCESSED, PENDING, CANCELED e PROCESSING",
+      "name": "ind_status",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "default": null,
+      "doc": "[NOT_SECURITY_APPLY] IDENTIFICADOR PAI DA ANTECIPACAO NO MONOLITO, EM CASO DE ANTECIPACAO EM REDES",
+      "name": "idt_advanceable_rec_parent",
+      "type": [
+        "null",
+        "long"
+      ]
+    },
+    {
+      "default": null,
+      "doc": "[NOT_SECURITY_APPLY] CODIGO UUIDENTIFICADOR DE REFERENCIA DA ANTECIPACAO",
+      "name": "cod_uuid_anticipation",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "default": null,
+      "doc": "[NOT_SECURITY_APPLY] IDENTIFICADOR DA ANTECIPACAO PAI",
+      "name": "idt_anticipation_parent",
+      "type": [
+        "null",
+        "long"
+      ]
+    },
+    {
+      "default": null,
+      "doc": "[NOT_SECURITY_APPLY] IDENTIFICADOR DO CUSTOMER",
+      "name": "cod_customer",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "default": null,
+      "doc": "[NOT_SECURITY_APPLY] INDICA SE A INTEGRACAO DE CONCLUSAO FOI CHAMADA",
+      "name": "flg_completion_integration",
+      "type": [
+        "null",
+        "boolean"
+      ]
+    },
+    {
+      "default": null,
+      "doc": "[NOT_SECURITY_APPLY] USUARIO QUE REALIZOU A ANTECIPAÇÃO ATRAVÉS DA MESA",
+      "name": "nam_change_agent",
+      "type": [
+        "null",
+        "string"
+      ]
+    }
+  ],
+  "name": "anticipation",
+  "namespace": "data.xpress.ps.acquirer.receivables",
+  "type": "record"
+}

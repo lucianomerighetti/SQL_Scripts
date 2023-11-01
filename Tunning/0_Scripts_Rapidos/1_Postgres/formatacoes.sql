@@ -1,0 +1,1 @@
+SET lock_timeout TO '300s';

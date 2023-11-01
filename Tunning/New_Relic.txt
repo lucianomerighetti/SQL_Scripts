@@ -1,0 +1,7 @@
+Policy: [bko-fin-ads][receivable-schedule]
+
+Slack: receivable-schedule-db-alerts
+
+NECESSÁRIO WEBHOOK PARA O SLACK
+
+https://slack.com/intl/pt-br/help/articles/115005265063-Webhooks-de-entrada-para-o-Slack

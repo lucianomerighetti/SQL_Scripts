@@ -1,0 +1,22 @@
+1 - Baixar o Postgres e instalar localmente, criando um usuário e senha
+
+2 - CREATE USER <user> WITH LOGIN ENCRYPTED PASSWORD 'senha' CONNECTION LIMIT -1;
+    ALTER ROLE <user> SUPERUSER CREATEDB CREATEROLE INHERIT LOGIN; 
+	
+3 - Criar usuários _ADM, UBR e tablespaces com nomes iguais ao do banco que vc quer 'clonar'	
+
+3 - Crie o banco, e logo depois o schema, com o nome igual ao do banco que vc quer 'clonar' no ambiente local;	
+
+4 - No arquivo build.gradle, no item databaseMigration\databases, inclua o seu banco local. Exemplo:
+        local {
+            jdbcUrl  = "jdbc:postgresql://localhost:5432/banco"
+            username = "user"
+            plainPassword = "senha"
+        }
+
+OBS: Aqui não precisa fazer commit nessa alteração no repositório
+
+5 - No prompt de comando do Windows, vá na pasta onde está o repositório de migration do banco que você quer 'clonar' e execute o comando:
+	gradlew.bat databaseMigration -Dserver=local --stacktrace
+	
+OBS: Talvez precise aumentar a memória

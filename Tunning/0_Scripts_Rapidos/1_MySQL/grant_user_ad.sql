@@ -1,0 +1,2 @@
+SELECT, PROCESS ON *.* 
+SELECT ON schema.*

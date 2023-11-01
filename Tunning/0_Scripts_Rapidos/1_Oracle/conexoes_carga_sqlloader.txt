@@ -1,0 +1,13 @@
+-- STG: sqlldr dbaad/p1adstg@gt-pho-dev.bd.intranet.pags:1521/etl.pagseguro control=D:\Users\smoreira\0_scripts\carga_sqlloader.ctl
+-- QA: sqlldr ad/p1adqa@node2-qa1.pho2.bd.intranet:1521/dev.pagseguro control=D:\Users\smoreira\0_scripts\carga_sqlloader.ctl
+-- PROD: sqlldr smoreira/\"senha\"@node1.pho2.bd.intranet:1521/ad.pagseguro control=D:\Users\smoreira\0_scripts\carga_sqlloader.ctl
+
+-- REC: sqlldr smoreira/\"senha\"@PDBRECEIVABLES.BD.INTRANET.PAGS:1521/PDBRECEIVABLES control=D:\Users\smoreira\0_scripts\carga_sqlloader.ctl
+
+-- SC: sqlldr smoreira/\"senha\"@PDBSETTLEMENTCONTRACT.BD.INTRANET.PAGS:1521/PDBSETTLEMENTCONTRACT control=D:\Users\smoreira\0_scripts\carga_sqlloader.ctl
+
+-- DEBITSCHEDULE: sqlldr smoreira/\"senha\"@PDBDEBITSCHEDULE.BD.INTRANET.PAGS:1521/PDBDEBITSCHEDULE control=D:\Users\smoreira\0_scripts\carga_sqlloader.ctl
+
+-- RECTRANSITORYMOVEMENT: sqlldr smoreira/\"senha\"@PDBRECTRANSITORYMOVEMENT.BD.INTRANET.PAGS:1521/PDBRECTRANSITORYMOVEMENT control=D:\Users\smoreira\0_scripts\carga_sqlloader.ctl
+
+-- PDBRECEIVABLESETTLEMENT: sqlldr smoreira/\"senha\"@PDBRECEIVABLESETTLEMENT.BD.INTRANET.PAGS:1521/PDBRECEIVABLESETTLEMENT control=D:\Users\smoreira\0_scripts\carga_sqlloader.ctl

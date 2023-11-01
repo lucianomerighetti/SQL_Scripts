@@ -1,0 +1,55 @@
+-- Oracle
+
+10.184.33.133 in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- PDBRECEIVABLESETTLEMENT, PDBATM, PDBBCBATCHREQUEST e PDBBCTRANSACTION
+10.184.40.129 in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- PDBRECTRANSITORYMOVEMENT e PDBBDSETTLEMENTCRTCONFIG
+10.184.40.93  in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- PDBANTICIPATIONPROVIDER e PDBHRU
+10.184.41.43  in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- PDBDEBITSCHEDULE, PDBBCCAMPAIGN, PDBBCANTICIPATION e PDBEXTEACQUIRERSCHEDULE
+10.184.40.88  in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- PDBBDREGISTRADORACUSTOMER
+10.184.32.35  in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- PDBBDCOUTPRESETTLEMENT
+10.184.68.103 in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- PDBEXTERNALRUSETTLEMENT
+10.184.32.226 in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- PDBBANKCIPDOMICILIO e PDBBCMIGRATION
+10.184.32.169 in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- PDBBCREFERENCERATE e PDBBCCALCULATOR
+10.184.40.59  in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- PDBBCPROPOSAL
+10.184.40.232 in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- PDBCONTRACTMANAGER
+
+
+dbmx8bdbadm01 in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- PDBRECEIVABLES e PDBSETTLEMENTCONTRACT
+dbmx8bdbadm02 in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- PDBRECEIVABLES e PDBSETTLEMENTCONTRACT
+
+taxrate in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- taxrate
+negotiation-service in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- negotiation-service
+
+-- Postgres
+
+fidc in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19
+anticipationdataservice in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19
+cashout-strategy in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19
+cip in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19
+customer-association in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19
+cashout-ted in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19
+asset-based-loaner in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19
+
+-- Cassandra
+
+hru in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19
+rcr in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19
+fidc_concilia in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19
+
+-- SQL Server
+
+10.184.40.44 in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- hg-fidc-w-sql.bd.intranet
+
+-- MySQL
+
+10.186.46.13 in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- opa
+10.184.32.245 in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- opa
+
+-- MongoDB
+10.184.32.121 in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- bc_segmentation
+10.186.40.114 in:#ec_basileia_db_alerts after:2022-07-02 before:2022-07-19 -- bc_segmentation
+
+-- Kafka
+
+receivable-unit-batch-info in:#bko-fin-kafka-connect-alerts after:2022-07-02 before:2022-07-19
+receivable-unit in:#bko-fin-kafka-connect-alerts after:2022-07-02 before:2022-07-19
+anticipation in:#bko-fin-kafka-connect-alerts after:2022-07-02 before:2022-07-19

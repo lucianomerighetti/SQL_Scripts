@@ -1,0 +1,8 @@
+-- copia o arquivo
+aws --profile tombamento-miami-prod --recursive s3 cp s3://pagseguro-data-warehouse-output/tombamento-miami/usuario_cip_meio_pagammento_2020/day=2020-10-28 c:\Sammy
+
+-- apaga o arquivo
+aws --profile tombamento-miami-dev --recursive s3 cp s3://pagseguro-data-warehouse-output-qa/tombamento-miami/teste-acesso-recovery_financial_movement/day=2021-05-24/ c:\Sammy
+
+-- apaga a pasta
+aws --profile tombamento-miami-dev --recursive s3 rm s3://pagseguro-data-warehouse-output-qa/tombamento-miami/teste-acesso-recovery_financial_movement/
