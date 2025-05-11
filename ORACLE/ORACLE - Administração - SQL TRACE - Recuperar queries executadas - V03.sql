@@ -10,16 +10,16 @@ select * from sys.v$sql;
 
 select b.parsing_schema_name          owner,
        a.executions                   executions,
-       a.sql_fulltext,
+       a.sql_text,
        --retorna os parâmetros utilizados no SQL
-       (select wm_concat(chr(13) || name || ' = ' || nvl(value_string, 'NULL')) from sys.v$sql_bind_capture bc where bc.sql_id = b.sql_id) param_bind,
+       (select listagg((name || ' = ' || nvl(value_string, 'NULL')), '|') within group (order by name) from v$sql_bind_capture bc where bc.sql_id = b.sql_id) param_bind,
        b.rows_processed,
        b.elapsed_time,
        b.users_executing
-  from sys.v$sqlstats a,
-       sys.v$sql b
+  from v$sqlstats a,
+       v$sql b
  where a.sql_id              = b.sql_id
-   and b.parsing_schema_name like 'SANFOM'
+   and b.parsing_schema_name like '%PROUNIINSCRICAO%'
  order by b.parsing_schema_name,
           elapsed_time desc;
 --------------------------------------------------------------------------------

@@ -1,16 +1,17 @@
 select distinct
+       ccf.constraint_name name,
+       cfk.constraint_type type,
+       cfk.status          status_fk,
+       cpk.status          status_pk,
        -----
        cfk.owner           owner_fk,
        cfk.table_name      table_name_fk,
-       ccf.constraint_name,
        ccf.column_name     column_fk,
-       cfk.status,
-       cfk.constraint_type,
        -----
        cpk.owner           owner_pk,
        cpk.table_name      table_name_pk,
-       cpk.status,
        ccp.column_name     column_pk
+       -----
   from sys.all_constraints  cfk,
        sys.all_cons_columns ccf,
        sys.all_constraints  cpk,
@@ -34,7 +35,3 @@ select distinct
           --cfk.constraint_type,
           cfk.owner,
           cfk.table_name;
-/*
- order by cpk.table_name,
-          cfk.table_name;
-*/

@@ -20,6 +20,7 @@ select b.username username,
   from v$sqlarea a, dba_users b
  where a.parsing_user_id = b.user_id
    and a.buffer_gets > 100000
+   and b.username = 'DBPROUNI_INSCRICAO'
  order by a.buffer_gets desc;
 
 --OS PIORES COMANDOS

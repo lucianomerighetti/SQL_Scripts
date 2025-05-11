@@ -8,8 +8,8 @@ select sid,
        to_char(logon_time, 'dd-mon-yyyy hh24:mi'),
        status
   from v$session
- where username in ('RECEIVABLESUBR')
-   and status = 'INACTIVE'
+ where status = 'INACTIVE'
+--   and username in ('RECEIVABLESUBR')
 --   and nvl(osuser,'*') <> 'sncprd'
 --   and program  is null  -- 18 24 30
  order by to_char(logon_time, 'dd-mon-yyyy hh24:mi');

@@ -34,7 +34,7 @@ end;
 -- INSERT INTO <Tabela Destino> (<Lista de Campos Destino>)
 -- SELECT <Lista de Campos Origem>
 --   FROM <Tabela Origem>
---  WHERE <Condição Origem>
+--  WHERE <Condiï¿½ï¿½o Origem>
 --------------------------------------------------------------------------------
 declare
 	crlf constant varchar2(2)     default chr(13) || chr(10);
@@ -68,7 +68,7 @@ end;
 --------------------------------------------------------------------------------  
 -- SELECT <Lista de Campos Origem>
 --   FROM <Tabela Origem>
---  WHERE <Condição Origem>
+--  WHERE <Condiï¿½ï¿½o Origem>
 --------------------------------------------------------------------------------
 declare
 	crlf constant varchar2(2)     default chr(13) || chr(10);
@@ -92,6 +92,7 @@ begin
 --	return result;
 	dbms_output.put_line(result);		
 end;
+/
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -102,7 +103,7 @@ select dtc.column_id      id,
 			 dtc.data_precision precision
   from sys.dba_tab_columns dtc
  where dtc.table_name = 'SYN_PRC_GERADO'
- order by dtc.column_id
+ order by dtc.column_id;
 --------------------------------------------------------------------------------
 select p.owner,
        p.name,

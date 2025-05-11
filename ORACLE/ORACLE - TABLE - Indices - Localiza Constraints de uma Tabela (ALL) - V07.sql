@@ -25,7 +25,8 @@ select distinct
    and ccf.owner             = cfk.owner
    and cfk.constraint_type   = 'R'
    and cfk.owner             = cpk.owner
-   --and cpk.owner             = upper('&Owner')
+   and (cfk.owner            = upper('&Owner') or
+        cpk.owner            = upper('&Owner'))
    and (cfk.table_name       = upper('&Tabela') or
         cpk.table_name       = upper('&Tabela'))
  order by cpk.owner,
